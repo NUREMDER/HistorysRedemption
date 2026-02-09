@@ -10,6 +10,7 @@ public class EnemyAI : MonoBehaviour
 
     [Header("Saldýrý Ayarlarý")]
     public float attackCooldown = 1.5f;
+    public int attackDamage = 10; 
     private float nextAttackTime = 0f;
 
     private Rigidbody2D rb;
@@ -22,7 +23,8 @@ public class EnemyAI : MonoBehaviour
 
         if (player == null)
         {
-            player = GameObject.FindGameObjectWithTag("Player").transform;
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) player = p.transform;
         }
     }
 
@@ -83,7 +85,14 @@ public class EnemyAI : MonoBehaviour
 
     void AttackPlayer()
     {
-        Debug.Log("DÜÞMAN SANA VURDU!");
+        
+        PlayerController playerScript = player.GetComponent<PlayerController>();
+        if (playerScript != null)
+        {
+            playerScript.TakeDamage(attackDamage);
+        }
+
+        
         StartCoroutine(FlashAttackEffect());
     }
 

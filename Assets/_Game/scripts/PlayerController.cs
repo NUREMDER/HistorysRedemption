@@ -1,8 +1,16 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Can Ayarlarý")]
+    public int maxHealth = 100;
+    private int currentHealth;
+
+    [Header("UI Ayarlarý")]
+    public Image healthBarFill;
+
     [Header("Hareket Ayarlarý")]
     public float moveSpeed = 8f;
     public float jumpForce = 12f;
@@ -10,8 +18,10 @@ public class PlayerController : MonoBehaviour
 
     [Header("Savaþ Ayarlarý")]
     public float attackRate = 0.4f;
-    public float damageDelay = 0.4f; 
+    public float damageDelay = 0.2f;
     private float nextAttackTime = 0f;
+
+    public int blockProtectionDamage = 2;
 
     [Header("Hitbox Ayarlarý")]
     public Transform attackPoint;
@@ -20,11 +30,13 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private Animator anim;
+    private SpriteRenderer sr;
 
     private bool isGrounded;
     private bool isFacingRight = true;
     private bool isCrouching = false;
     private bool isJumping = false;
+    private bool isBlocking = false;
     private float moveInput;
 
     public enum AttackDirection { Neutral, Up, Down, Forward, Backward }
@@ -33,6 +45,14 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        sr = GetComponent<SpriteRenderer>();
+
+        currentHealth = maxHealth;
+
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = 1f;
+        }
     }
 
     void Update()
@@ -47,8 +67,69 @@ public class PlayerController : MonoBehaviour
         Move();
     }
 
+    public void TakeDamage(int damage)
+    {
+        if (currentHealth <= 0) return;
+
+        int finalDamage = damage;
+
+        if (isBlocking)
+        {
+            finalDamage = blockProtectionDamage;
+        }
+
+        currentHealth -= finalDamage;
+
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = (float)currentHealth / maxHealth;
+        }
+
+        if (currentHealth <= 0)
+        {
+            if (healthBarFill != null) healthBarFill.fillAmount = 0;
+            Die();
+        }
+        else
+        {
+            if (!isBlocking)
+            {
+                anim.SetTrigger("Hurt");
+                StartCoroutine(FlashColor());
+            }
+        }
+    }
+
+    void Die()
+    {
+        anim.SetTrigger("Die");
+        rb.velocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        GetComponent<Collider2D>().enabled = false;
+        this.enabled = false;
+    }
+
+    IEnumerator FlashColor()
+    {
+        sr.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        sr.color = Color.white;
+    }
+
     void ProcessInputs()
     {
+        if (Input.GetMouseButton(1) && isGrounded && !isJumping)
+        {
+            isBlocking = true;
+            moveInput = 0;
+        }
+        else
+        {
+            isBlocking = false;
+        }
+
+        if (isBlocking) return;
+
         if (isGrounded && (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)))
         {
             isCrouching = true;
@@ -72,7 +153,7 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(PerformAttackRoutine("Punch"));
                 nextAttackTime = Time.time + attackRate;
             }
-            else if (Input.GetMouseButtonDown(1))
+            else if (Input.GetKeyDown(KeyCode.F))
             {
                 StartCoroutine(PerformAttackRoutine("Kick"));
                 nextAttackTime = Time.time + attackRate;
@@ -82,7 +163,14 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        if (isBlocking)
+        {
+            rb.velocity = new Vector2(0, rb.velocity.y);
+        }
+        else
+        {
+            rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        }
     }
 
     IEnumerator JumpRoutine()
@@ -95,10 +183,8 @@ public class PlayerController : MonoBehaviour
         isJumping = false;
     }
 
-    
     IEnumerator PerformAttackRoutine(string attackInputType)
     {
-        
         AttackDirection dir = AttackDirection.Neutral;
 
         if (Input.GetKey(KeyCode.W)) dir = AttackDirection.Up;
@@ -112,6 +198,7 @@ public class PlayerController : MonoBehaviour
         }
 
         int typeID = 0;
+
         switch (dir)
         {
             case AttackDirection.Neutral: typeID = 0; break;
@@ -124,10 +211,8 @@ public class PlayerController : MonoBehaviour
         anim.SetInteger("AttackType", typeID);
         anim.SetTrigger("AttackTrigger");
 
-        
         yield return new WaitForSeconds(damageDelay);
 
-       
         if (attackPoint != null)
         {
             Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
@@ -156,10 +241,13 @@ public class PlayerController : MonoBehaviour
         anim.SetFloat("Speed", Mathf.Abs(moveInput));
         anim.SetFloat("VerticalSpeed", rb.velocity.y);
         anim.SetBool("IsCrouching", isCrouching);
+        anim.SetBool("IsBlocking", isBlocking);
     }
 
     void CheckFlip()
     {
+        if (isBlocking) return;
+
         if (isFacingRight && moveInput < 0) Flip();
         else if (!isFacingRight && moveInput > 0) Flip();
     }
@@ -172,9 +260,7 @@ public class PlayerController : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        if (attackPoint == null)
-            return;
-
+        if (attackPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
