@@ -17,14 +17,16 @@ public class PlayerController : MonoBehaviour
     public float jumpDelay = 0.2f;
 
     [Header("Savaþ Ayarlarý")]
-    public float attackRate = 0.4f;
-    public float damageDelay = 0.2f;
+    public float attackRate = 0.4f; 
     private float nextAttackTime = 0f;
 
     public int blockProtectionDamage = 2;
 
     [Header("Hitbox Ayarlarý")]
-    public Transform attackPoint;
+    public Transform highAttackPoint;
+    public Transform midAttackPoint;
+    public Transform lowAttackPoint;
+
     public float attackRange = 0.5f;
     public LayerMask enemyLayers;
 
@@ -37,6 +39,7 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching = false;
     private bool isJumping = false;
     private bool isBlocking = false;
+    private bool isAttacking = false; 
     private float moveInput;
 
     public enum AttackDirection { Neutral, Up, Down, Forward, Backward }
@@ -67,6 +70,32 @@ public class PlayerController : MonoBehaviour
         Move();
     }
 
+    
+    public void TriggerAttackHit(int pointIndex)
+    {
+        Transform selectedPoint = null;
+
+        switch (pointIndex)
+        {
+            case 0: selectedPoint = lowAttackPoint; break;
+            case 1: selectedPoint = midAttackPoint; break;
+            case 2: selectedPoint = highAttackPoint; break;
+            default: selectedPoint = midAttackPoint; break;
+        }
+
+        if (selectedPoint == null) return;
+
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(selectedPoint.position, attackRange, enemyLayers);
+
+        foreach (Collider2D enemy in hitEnemies)
+        {
+            if (enemy.GetComponent<EnemyController>() != null)
+            {
+                enemy.GetComponent<EnemyController>().TakeDamage(20);
+            }
+        }
+    }
+
     public void TakeDamage(int damage)
     {
         if (currentHealth <= 0) return;
@@ -94,6 +123,8 @@ public class PlayerController : MonoBehaviour
         {
             if (!isBlocking)
             {
+               
+                isAttacking = false;
                 anim.SetTrigger("Hurt");
                 StartCoroutine(FlashColor());
             }
@@ -118,7 +149,8 @@ public class PlayerController : MonoBehaviour
 
     void ProcessInputs()
     {
-        if (Input.GetMouseButton(1) && isGrounded && !isJumping)
+        
+        if (Input.GetMouseButton(1) && isGrounded && !isJumping && !isAttacking)
         {
             isBlocking = true;
             moveInput = 0;
@@ -128,8 +160,14 @@ public class PlayerController : MonoBehaviour
             isBlocking = false;
         }
 
-        if (isBlocking) return;
+        
+        if (isBlocking || isAttacking)
+        {
+            moveInput = 0; 
+            return;
+        }
 
+        
         if (isGrounded && (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)))
         {
             isCrouching = true;
@@ -141,21 +179,23 @@ public class PlayerController : MonoBehaviour
             moveInput = Input.GetAxisRaw("Horizontal");
         }
 
-        if ((Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.Space)) && isGrounded && !isCrouching && !isJumping)
+       
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isCrouching && !isJumping)
         {
             StartCoroutine(JumpRoutine());
         }
 
+       
         if (Time.time >= nextAttackTime)
         {
             if (Input.GetMouseButtonDown(0))
             {
-                StartCoroutine(PerformAttackRoutine("Punch"));
+                StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
             }
             else if (Input.GetKeyDown(KeyCode.F))
             {
-                StartCoroutine(PerformAttackRoutine("Kick"));
+                StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
             }
         }
@@ -163,7 +203,7 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        if (isBlocking)
+        if (isBlocking || isAttacking)
         {
             rb.velocity = new Vector2(0, rb.velocity.y);
         }
@@ -183,17 +223,22 @@ public class PlayerController : MonoBehaviour
         isJumping = false;
     }
 
-    IEnumerator PerformAttackRoutine(string attackInputType)
+    IEnumerator PerformAttackRoutine()
     {
+        
+        isAttacking = true;
+        rb.velocity = Vector2.zero; 
+
         AttackDirection dir = AttackDirection.Neutral;
 
         if (Input.GetKey(KeyCode.W)) dir = AttackDirection.Up;
         else if (Input.GetKey(KeyCode.S)) dir = AttackDirection.Down;
         else if (moveInput != 0)
         {
-            if ((isFacingRight && moveInput > 0) || (!isFacingRight && moveInput < 0))
+           
+            if ((isFacingRight && Input.GetAxisRaw("Horizontal") > 0) || (!isFacingRight && Input.GetAxisRaw("Horizontal") < 0))
                 dir = AttackDirection.Forward;
-            else
+            else if (Input.GetAxisRaw("Horizontal") != 0)
                 dir = AttackDirection.Backward;
         }
 
@@ -211,20 +256,14 @@ public class PlayerController : MonoBehaviour
         anim.SetInteger("AttackType", typeID);
         anim.SetTrigger("AttackTrigger");
 
-        yield return new WaitForSeconds(damageDelay);
+       
+        yield return new WaitForSeconds(attackRate);
 
-        if (attackPoint != null)
-        {
-            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+        
+        isAttacking = false;
 
-            foreach (Collider2D enemy in hitEnemies)
-            {
-                if (enemy.GetComponent<EnemyController>() != null)
-                {
-                    enemy.GetComponent<EnemyController>().TakeDamage(20);
-                }
-            }
-        }
+        
+        anim.SetInteger("AttackType", 0);
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -246,10 +285,12 @@ public class PlayerController : MonoBehaviour
 
     void CheckFlip()
     {
-        if (isBlocking) return;
+        
+        if (isBlocking || isAttacking) return;
+        float inputX = Input.GetAxisRaw("Horizontal");
 
-        if (isFacingRight && moveInput < 0) Flip();
-        else if (!isFacingRight && moveInput > 0) Flip();
+        if (isFacingRight && inputX < 0) Flip();
+        else if (!isFacingRight && inputX > 0) Flip();
     }
 
     void Flip()
@@ -260,8 +301,11 @@ public class PlayerController : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        if (attackPoint == null) return;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
+        if (midAttackPoint != null) Gizmos.DrawWireSphere(midAttackPoint.position, attackRange);
+        Gizmos.color = Color.yellow;
+        if (highAttackPoint != null) Gizmos.DrawWireSphere(highAttackPoint.position, attackRange);
+        Gizmos.color = Color.blue;
+        if (lowAttackPoint != null) Gizmos.DrawWireSphere(lowAttackPoint.position, attackRange);
     }
 }
