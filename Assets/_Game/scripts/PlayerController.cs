@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
     public float jumpDelay = 0.2f;
 
     [Header("Savaþ Ayarlarý")]
-    public float attackRate = 0.4f; 
+    public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
 
     public int blockProtectionDamage = 2;
@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
 
-    public float attackRange = 0.5f;
+    public float attackRange = 0.8f;
     public LayerMask enemyLayers;
 
     private Rigidbody2D rb;
@@ -39,7 +39,7 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching = false;
     private bool isJumping = false;
     private bool isBlocking = false;
-    private bool isAttacking = false; 
+    private bool isAttacking = false;
     private float moveInput;
 
     public enum AttackDirection { Neutral, Up, Down, Forward, Backward }
@@ -70,7 +70,6 @@ public class PlayerController : MonoBehaviour
         Move();
     }
 
-    
     public void TriggerAttackHit(int pointIndex)
     {
         Transform selectedPoint = null;
@@ -123,7 +122,6 @@ public class PlayerController : MonoBehaviour
         {
             if (!isBlocking)
             {
-               
                 isAttacking = false;
                 anim.SetTrigger("Hurt");
                 StartCoroutine(FlashColor());
@@ -149,7 +147,6 @@ public class PlayerController : MonoBehaviour
 
     void ProcessInputs()
     {
-        
         if (Input.GetMouseButton(1) && isGrounded && !isJumping && !isAttacking)
         {
             isBlocking = true;
@@ -160,14 +157,12 @@ public class PlayerController : MonoBehaviour
             isBlocking = false;
         }
 
-        
         if (isBlocking || isAttacking)
         {
-            moveInput = 0; 
+            moveInput = 0;
             return;
         }
 
-        
         if (isGrounded && (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)))
         {
             isCrouching = true;
@@ -179,13 +174,11 @@ public class PlayerController : MonoBehaviour
             moveInput = Input.GetAxisRaw("Horizontal");
         }
 
-       
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isCrouching && !isJumping)
         {
             StartCoroutine(JumpRoutine());
         }
 
-       
         if (Time.time >= nextAttackTime)
         {
             if (Input.GetMouseButtonDown(0))
@@ -225,9 +218,8 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator PerformAttackRoutine()
     {
-        
         isAttacking = true;
-        rb.velocity = Vector2.zero; 
+        rb.velocity = Vector2.zero;
 
         AttackDirection dir = AttackDirection.Neutral;
 
@@ -235,7 +227,6 @@ public class PlayerController : MonoBehaviour
         else if (Input.GetKey(KeyCode.S)) dir = AttackDirection.Down;
         else if (moveInput != 0)
         {
-           
             if ((isFacingRight && Input.GetAxisRaw("Horizontal") > 0) || (!isFacingRight && Input.GetAxisRaw("Horizontal") < 0))
                 dir = AttackDirection.Forward;
             else if (Input.GetAxisRaw("Horizontal") != 0)
@@ -256,13 +247,9 @@ public class PlayerController : MonoBehaviour
         anim.SetInteger("AttackType", typeID);
         anim.SetTrigger("AttackTrigger");
 
-       
         yield return new WaitForSeconds(attackRate);
 
-        
         isAttacking = false;
-
-        
         anim.SetInteger("AttackType", 0);
     }
 
@@ -285,7 +272,6 @@ public class PlayerController : MonoBehaviour
 
     void CheckFlip()
     {
-        
         if (isBlocking || isAttacking) return;
         float inputX = Input.GetAxisRaw("Horizontal");
 
