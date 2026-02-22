@@ -1,25 +1,59 @@
 using UnityEngine;
+using System.Collections;
 
 public class EnemyAI : MonoBehaviour
 {
+    [Header("Can Ayarlarý")]
+    public int maxHealth = 100;
+    private int currentHealth;
+
     [Header("Hedef Ayarlarý")]
     public Transform player;
     public float moveSpeed = 3f;
     public float detectionRange = 10f;
-    public float attackRange = 1.5f;
+    public float stopDistance = 1.2f;
 
     [Header("Saldýrý Ayarlarý")]
     public float attackCooldown = 1.5f;
-    public int attackDamage = 10; 
-    private float nextAttackTime = 0f;
+    private float lastAttackTime = 0f;
 
+    [Header("Defans Ayarlarý")]
+    public int blockProtectionDamage = 2;
+    public float blockChance = 40f;
+    public float blockDuration = 2.0f;
+
+    [Header("Hitbox Ayarlarý")]
+    public Transform highAttackPoint;
+    public Transform midAttackPoint;
+    public Transform lowAttackPoint;
+    public float attackRange = 0.8f;
+    public LayerMask playerLayer;
+
+    [Header("VFX Ayarlarý")]
+    public GameObject hitEffectPrefab;
+
+    [Header("SFX Ayarlarý")]
+    public AudioClip attackSound;
+    public AudioClip hitSound;
+    public AudioClip blockSound;
+
+    private Animator anim;
     private Rigidbody2D rb;
     private SpriteRenderer sr;
+    private AudioSource audioSource;
+    private bool isAttacking = false;
+    private bool isBlocking = false;
+    private bool isFacingRight = true;
+    private bool isDead = false;
 
     void Start()
     {
+        anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
+        audioSource = GetComponent<AudioSource>();
+
+        currentHealth = maxHealth;
 
         if (player == null)
         {
@@ -30,7 +64,7 @@ public class EnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
+        if (isDead || player == null) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
@@ -38,7 +72,13 @@ public class EnemyAI : MonoBehaviour
         {
             FacePlayer();
 
-            if (distanceToPlayer > attackRange)
+            if (isBlocking)
+            {
+                StopMoving();
+                return;
+            }
+
+            if (distanceToPlayer > stopDistance && !isAttacking)
             {
                 MoveTowardsPlayer();
             }
@@ -46,10 +86,9 @@ public class EnemyAI : MonoBehaviour
             {
                 StopMoving();
 
-                if (Time.time >= nextAttackTime)
+                if (distanceToPlayer <= stopDistance && Time.time >= lastAttackTime + attackCooldown && !isAttacking)
                 {
-                    AttackPlayer();
-                    nextAttackTime = Time.time + attackCooldown;
+                    StartCoroutine(AttackRoutine());
                 }
             }
         }
@@ -57,51 +96,163 @@ public class EnemyAI : MonoBehaviour
         {
             StopMoving();
         }
+
+        anim.SetFloat("VerticalSpeed", rb.velocity.y);
+        anim.SetBool("IsBlocking", isBlocking);
     }
 
     void MoveTowardsPlayer()
     {
-        Vector2 targetPosition = new Vector2(player.position.x, rb.position.y);
-        Vector2 newPos = Vector2.MoveTowards(rb.position, targetPosition, moveSpeed * Time.deltaTime);
-        rb.MovePosition(newPos);
+        float direction = player.position.x > transform.position.x ? 1 : -1;
+        rb.velocity = new Vector2(direction * moveSpeed, rb.velocity.y);
+        anim.SetFloat("Speed", 1);
     }
 
     void StopMoving()
     {
-        rb.velocity = Vector2.zero;
+        rb.velocity = new Vector2(0, rb.velocity.y);
+        anim.SetFloat("Speed", 0);
     }
 
     void FacePlayer()
     {
-        if (player.position.x > transform.position.x)
+        if (isAttacking || isBlocking) return;
+
+        if (player.position.x > transform.position.x && !isFacingRight)
         {
-            sr.flipX = false;
+            Flip();
+        }
+        else if (player.position.x < transform.position.x && isFacingRight)
+        {
+            Flip();
+        }
+    }
+
+    void Flip()
+    {
+        isFacingRight = !isFacingRight;
+        transform.Rotate(0f, 180f, 0f);
+    }
+
+    IEnumerator AttackRoutine()
+    {
+        isAttacking = true;
+        StopMoving();
+
+        if (audioSource != null && attackSound != null) audioSource.PlayOneShot(attackSound);
+
+        int randomAttack = Random.Range(0, 3);
+
+        anim.SetInteger("AttackType", randomAttack);
+        anim.SetTrigger("AttackTrigger");
+
+        lastAttackTime = Time.time;
+
+        yield return new WaitForSeconds(0.5f);
+
+        isAttacking = false;
+        anim.SetInteger("AttackType", 0);
+    }
+
+    IEnumerator BlockRoutine()
+    {
+        isBlocking = true;
+        StopMoving();
+        anim.SetBool("IsBlocking", true);
+
+        yield return new WaitForSeconds(blockDuration);
+
+        isBlocking = false;
+        anim.SetBool("IsBlocking", false);
+    }
+
+    public void TriggerAttackHit(int pointIndex)
+    {
+        Transform selectedPoint = null;
+
+        switch (pointIndex)
+        {
+            case 0: selectedPoint = lowAttackPoint; break;
+            case 1: selectedPoint = midAttackPoint; break;
+            case 2: selectedPoint = highAttackPoint; break;
+            default: selectedPoint = midAttackPoint; break;
+        }
+
+        if (selectedPoint == null) return;
+
+        Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(selectedPoint.position, attackRange, playerLayer);
+
+        bool hasHit = false;
+
+        foreach (Collider2D p in hitPlayer)
+        {
+            PlayerController playerScript = p.GetComponent<PlayerController>();
+            if (playerScript != null)
+            {
+                playerScript.TakeDamage(10);
+                hasHit = true;
+            }
+        }
+
+        if (hasHit)
+        {
+            StartCoroutine(HitStopRoutine(0.05f));
+        }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (isDead) return;
+
+        int finalDamage = damage;
+
+        if (isBlocking)
+        {
+            finalDamage = blockProtectionDamage;
+            if (audioSource != null && blockSound != null) audioSource.PlayOneShot(blockSound);
         }
         else
         {
-            sr.flipX = true;
-        }
-    }
+            anim.SetTrigger("Hurt");
+            if (audioSource != null && hitSound != null) audioSource.PlayOneShot(hitSound);
 
-    void AttackPlayer()
-    {
-        
-        PlayerController playerScript = player.GetComponent<PlayerController>();
-        if (playerScript != null)
+            if (hitEffectPrefab != null)
+            {
+                Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+            }
+
+            if (!isAttacking && Random.Range(0, 100) < blockChance)
+            {
+                StartCoroutine(BlockRoutine());
+            }
+        }
+
+        currentHealth -= finalDamage;
+        StartCoroutine(FlashRed());
+
+        if (currentHealth <= 0)
         {
-            playerScript.TakeDamage(attackDamage);
+            Die();
         }
-
-        
-        StartCoroutine(FlashAttackEffect());
     }
 
-    System.Collections.IEnumerator FlashAttackEffect()
+    void Die()
     {
-        Color originalColor = sr.color;
-        sr.color = Color.black;
-        yield return new WaitForSeconds(0.2f);
-        sr.color = originalColor;
+        isDead = true;
+        anim.SetTrigger("Die");
+
+        rb.velocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        GetComponent<Collider2D>().enabled = false;
+
+        this.enabled = false;
+    }
+
+    IEnumerator FlashRed()
+    {
+        sr.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        sr.color = Color.white;
     }
 
     void OnDrawGizmosSelected()
@@ -110,6 +261,13 @@ public class EnemyAI : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        if (midAttackPoint != null) Gizmos.DrawWireSphere(midAttackPoint.position, attackRange);
+    }
+
+    IEnumerator HitStopRoutine(float duration)
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = 1f;
     }
 }

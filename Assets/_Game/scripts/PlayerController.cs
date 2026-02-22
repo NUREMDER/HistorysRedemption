@@ -19,20 +19,27 @@ public class PlayerController : MonoBehaviour
     [Header("Savaþ Ayarlarý")]
     public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
-
     public int blockProtectionDamage = 2;
 
     [Header("Hitbox Ayarlarý")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
-
     public float attackRange = 0.8f;
     public LayerMask enemyLayers;
+
+    [Header("VFX Ayarlarý")]
+    public GameObject hitEffectPrefab;
+
+    [Header("SFX Ayarlarý")]
+    public AudioClip attackSound;
+    public AudioClip hitSound;
+    public AudioClip blockSound;
 
     private Rigidbody2D rb;
     private Animator anim;
     private SpriteRenderer sr;
+    private AudioSource audioSource;
 
     private bool isGrounded;
     private bool isFacingRight = true;
@@ -49,6 +56,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
+        audioSource = GetComponent<AudioSource>();
 
         currentHealth = maxHealth;
 
@@ -86,12 +94,20 @@ public class PlayerController : MonoBehaviour
 
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(selectedPoint.position, attackRange, enemyLayers);
 
+        bool hasHit = false;
+
         foreach (Collider2D enemy in hitEnemies)
         {
-            if (enemy.GetComponent<EnemyController>() != null)
+            if (enemy.GetComponent<EnemyAI>() != null)
             {
-                enemy.GetComponent<EnemyController>().TakeDamage(20);
+                enemy.GetComponent<EnemyAI>().TakeDamage(20);
+                hasHit = true;
             }
+        }
+
+        if (hasHit)
+        {
+            StartCoroutine(HitStopRoutine(0.05f));
         }
     }
 
@@ -104,6 +120,11 @@ public class PlayerController : MonoBehaviour
         if (isBlocking)
         {
             finalDamage = blockProtectionDamage;
+            if (audioSource != null && blockSound != null) audioSource.PlayOneShot(blockSound);
+        }
+        else
+        {
+            if (audioSource != null && hitSound != null) audioSource.PlayOneShot(hitSound);
         }
 
         currentHealth -= finalDamage;
@@ -124,6 +145,12 @@ public class PlayerController : MonoBehaviour
             {
                 isAttacking = false;
                 anim.SetTrigger("Hurt");
+
+                if (hitEffectPrefab != null)
+                {
+                    Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                }
+
                 StartCoroutine(FlashColor());
             }
         }
@@ -221,6 +248,8 @@ public class PlayerController : MonoBehaviour
         isAttacking = true;
         rb.velocity = Vector2.zero;
 
+        if (audioSource != null && attackSound != null) audioSource.PlayOneShot(attackSound);
+
         AttackDirection dir = AttackDirection.Neutral;
 
         if (Input.GetKey(KeyCode.W)) dir = AttackDirection.Up;
@@ -293,5 +322,12 @@ public class PlayerController : MonoBehaviour
         if (highAttackPoint != null) Gizmos.DrawWireSphere(highAttackPoint.position, attackRange);
         Gizmos.color = Color.blue;
         if (lowAttackPoint != null) Gizmos.DrawWireSphere(lowAttackPoint.position, attackRange);
+    }
+
+    IEnumerator HitStopRoutine(float duration)
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = 1f;
     }
 }
