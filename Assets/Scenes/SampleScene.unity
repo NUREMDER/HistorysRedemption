@@ -265,8 +265,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   hitEffectPrefab: {fileID: 8682851817703302806, guid: 677972d6a2883e543ae5b9be4aa7feb3, type: 3}
-  attackSound: {fileID: 0}
-  hitSound: {fileID: 0}
+  attackSound: {fileID: 8300000, guid: 804efdafb2b9d064d83eaccdbbcb54a5, type: 3}
+  hitSound: {fileID: 8300000, guid: 29229b2d66e914a41b3500fcc37b6d91, type: 3}
   blockSound: {fileID: 0}
 --- !u!95 &274161174
 Animator:
@@ -906,7 +906,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   healthBarFill: {fileID: 834194540}
-  moveSpeed: 12
+  moveSpeed: 8
   jumpForce: 6.8
   jumpDelay: 0
   attackRate: 1
@@ -919,8 +919,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   hitEffectPrefab: {fileID: 8682851817703302806, guid: 677972d6a2883e543ae5b9be4aa7feb3, type: 3}
-  attackSound: {fileID: 0}
-  hitSound: {fileID: 0}
+  attackSound: {fileID: 8300000, guid: 29229b2d66e914a41b3500fcc37b6d91, type: 3}
+  hitSound: {fileID: 8300000, guid: 804efdafb2b9d064d83eaccdbbcb54a5, type: 3}
   blockSound: {fileID: 0}
 --- !u!50 &556708462
 Rigidbody2D:
