@@ -129,6 +129,11 @@ public class PlayerController : MonoBehaviour
 
         currentHealth -= finalDamage;
 
+        if (currentHealth > 0 && currentHealth <= (maxHealth * 0.2f))
+        {
+            GameManager.instance.ShowFleeOption();
+        }
+
         if (healthBarFill != null)
         {
             healthBarFill.fillAmount = (float)currentHealth / maxHealth;
@@ -163,6 +168,7 @@ public class PlayerController : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         GetComponent<Collider2D>().enabled = false;
         this.enabled = false;
+        GameManager.instance.PlayerDefeated();
     }
 
     IEnumerator FlashColor()

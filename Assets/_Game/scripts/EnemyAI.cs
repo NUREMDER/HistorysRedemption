@@ -1,11 +1,13 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class EnemyAI : MonoBehaviour
 {
     [Header("Can Ayarlarý")]
     public int maxHealth = 100;
     private int currentHealth;
+    public Image healthBarFill;
 
     [Header("Hedef Ayarlarý")]
     public Transform player;
@@ -54,6 +56,11 @@ public class EnemyAI : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
 
         currentHealth = maxHealth;
+
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = 1f;
+        }
 
         if (player == null)
         {
@@ -228,6 +235,12 @@ public class EnemyAI : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
+
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = (float)currentHealth / maxHealth;
+        }
+
         StartCoroutine(FlashRed());
 
         if (currentHealth <= 0)
@@ -246,6 +259,8 @@ public class EnemyAI : MonoBehaviour
         GetComponent<Collider2D>().enabled = false;
 
         this.enabled = false;
+
+        GameManager.instance.EnemyDefeated(50, 10);
     }
 
     IEnumerator FlashRed()
