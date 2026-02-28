@@ -11,6 +11,10 @@ public class GameManager : MonoBehaviour
     public int playerGold = 0;
     public int playerReputation = 0;
 
+    [Header("Kalýcý Geliþtirmeler")]
+    public int bonusMaxHealth = 0;
+    public int bonusDamage = 0;
+
     [Header("UI Panelleri")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;
