@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     public float jumpDelay = 0.2f;
 
     [Header("Savaþ Ayarlarý")]
+    public int attackDamage = 20;
     public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
     public int blockProtectionDamage = 2;
@@ -58,6 +59,11 @@ public class PlayerController : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
 
+        if (GameManager.instance != null)
+        {
+            maxHealth += GameManager.instance.bonusMaxHealth;
+        }
+
         currentHealth = maxHealth;
 
         if (healthBarFill != null)
@@ -96,11 +102,18 @@ public class PlayerController : MonoBehaviour
 
         bool hasHit = false;
 
+        int totalDamage = attackDamage;
+        if (GameManager.instance != null)
+        {
+            totalDamage += GameManager.instance.bonusDamage;
+        }
+
         foreach (Collider2D enemy in hitEnemies)
         {
-            if (enemy.GetComponent<EnemyAI>() != null)
+            EnemyAI enemyAI = enemy.GetComponent<EnemyAI>();
+            if (enemyAI != null)
             {
-                enemy.GetComponent<EnemyAI>().TakeDamage(20);
+                enemyAI.TakeDamage(totalDamage);
                 hasHit = true;
             }
         }
