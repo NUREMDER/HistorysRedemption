@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Ekonomi ve Ýtibar")]
     public int playerGold = 0;
+    public int playerXP = 0;
     public int playerReputation = 0;
 
     [Header("Kalýcý Geliþtirmeler")]
@@ -34,11 +35,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void EnemyDefeated(int goldReward, int repReward)
+    public void EnemyDefeated(int goldReward, int xpReward, int repReward)
     {
         if (fleeButton != null) fleeButton.SetActive(false);
 
         playerGold += goldReward;
+        playerXP += xpReward;
         playerReputation += repReward;
 
         StartCoroutine(ShowVictoryScreen());

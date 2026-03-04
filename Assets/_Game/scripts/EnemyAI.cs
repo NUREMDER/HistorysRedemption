@@ -260,7 +260,7 @@ public class EnemyAI : MonoBehaviour
 
         this.enabled = false;
 
-        GameManager.instance.EnemyDefeated(50, 10);
+        GameManager.instance.EnemyDefeated(50, 100, 10);
     }
 
     IEnumerator FlashRed()
