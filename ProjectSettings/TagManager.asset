@@ -5,6 +5,16 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - SlideZone
+  - ThrowZone
+  - BigJumpZone
+  - JumpOverZone
+  - JumpingZone
+  - Jumping1Zone
+  - JumpingDownZone
+  - JumpingDown1Zone
+  - RunningJumpZone
+  - Obstacle
   layers:
   - Default
   - TransparentFX
@@ -13,7 +23,7 @@ TagManager:
   - Water
   - UI
   - Enemy
-  - 
+  - ObstacleLayer
   - 
   - 
   - 
