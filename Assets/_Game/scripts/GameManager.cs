@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+    public enum LastMatchResult { None, Won, Fled, Lost }
 
     [Header("Ekonomi ve tibar")]
     public int playerGold = 0;
@@ -21,6 +22,10 @@ public class GameManager : MonoBehaviour
     public GameObject defeatPanel;
     public GameObject fleePanel;
     public GameObject fleeButton;
+
+    [Header("Maç Hafızası")]
+    public LastMatchResult lastMatchStatus = LastMatchResult.None;
+    public int lastMatchHealthDifference = 0;
 
     void Awake()
     {
@@ -40,6 +45,14 @@ public class GameManager : MonoBehaviour
     {
         if (fleeButton != null) fleeButton.SetActive(false);
 
+        lastMatchStatus = LastMatchResult.Won;
+
+        PlayerController player = GameObject.FindObjectOfType<PlayerController>();
+        if (player != null)
+        {
+        
+        lastMatchHealthDifference = player.maxHealth; 
+        }
         playerGold += goldReward;
         playerXP += xpReward;
         playerReputation += repReward;
@@ -85,6 +98,9 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("PlayerGold", playerGold);
         PlayerPrefs.SetInt("BonusHealth", bonusMaxHealth);
         PlayerPrefs.SetInt("BonusDamage", bonusDamage);
+        //son maç durumu oyun kapatıldığında da hatırlansın diye 
+        PlayerPrefs.SetInt("LastMatchStatus", (int)lastMatchStatus);
+        PlayerPrefs.SetInt("LastHealthDiff", lastMatchHealthDifference);
         PlayerPrefs.Save();
     }
 
@@ -95,6 +111,8 @@ public class GameManager : MonoBehaviour
         playerGold = PlayerPrefs.GetInt("PlayerGold", 0);
         bonusMaxHealth = PlayerPrefs.GetInt("BonusHealth", 0);
         bonusDamage = PlayerPrefs.GetInt("BonusDamage", 0);
+        lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
+        lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
     }
 
     IEnumerator ShowVictoryScreen()
