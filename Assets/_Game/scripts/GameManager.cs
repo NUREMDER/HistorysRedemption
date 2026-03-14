@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
     public enum LastMatchResult { None, Won, Fled, Lost }
+    public string lastWonSceneName = "";
 
     [Header("Ekonomi ve tibar")]
     public int playerGold = 0;
@@ -46,6 +47,7 @@ public class GameManager : MonoBehaviour
         if (fleeButton != null) fleeButton.SetActive(false);
 
         lastMatchStatus = LastMatchResult.Won;
+        lastWonSceneName = SceneManager.GetActiveScene().name;
 
         PlayerController player = GameObject.FindObjectOfType<PlayerController>();
         if (player != null)

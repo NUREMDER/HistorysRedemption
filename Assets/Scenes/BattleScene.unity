@@ -385,6 +385,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd4eaceb58d4477488f340a811ba1321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lastWonSceneName: 
   playerGold: 0
   playerXP: 0
   playerReputation: 0
@@ -394,6 +395,8 @@ MonoBehaviour:
   defeatPanel: {fileID: 897043041}
   fleePanel: {fileID: 2022008894}
   fleeButton: {fileID: 680699622}
+  lastMatchStatus: 0
+  lastMatchHealthDifference: 0
 --- !u!4 &603008772
 Transform:
   m_ObjectHideFlags: 0

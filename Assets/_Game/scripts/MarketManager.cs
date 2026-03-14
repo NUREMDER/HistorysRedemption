@@ -19,9 +19,22 @@ public class MarketManager : MonoBehaviour
     public float maxDiscountPercent = 0.5f; 
     public float repEffectMultiplier = 0.001f; 
 
+    [Header("Lobby UI Elements (To Hide)")]
+    public GameObject lobbyXPContainer;
+    public GameObject lobbyRepContainer; 
+
     void OnEnable()
     {
         UpdateUI();
+        if (lobbyXPContainer != null) lobbyXPContainer.SetActive(false);
+        if (lobbyRepContainer != null) lobbyRepContainer.SetActive(false);
+    }
+
+    void OnDisable()
+    {
+        if (lobbyXPContainer != null) lobbyXPContainer.SetActive(true);
+        if (lobbyRepContainer != null) lobbyRepContainer.SetActive(true);
+        
     }
 
     public void BuyHealthUpgrade()
