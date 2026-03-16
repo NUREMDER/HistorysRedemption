@@ -9,10 +9,17 @@ public class GameManager : MonoBehaviour
     public enum LastMatchResult { None, Won, Fled, Lost }
     public string lastWonSceneName = "";
 
-    [Header("Ekonomi ve tibar")]
+    [Header("Ekonomi ve İtibar")]
     public int playerGold = 0;
-    public int playerXP = 0;
-    public int playerReputation = 0;
+    public int playerXP = 0;           // Toplam kazanılan XP
+    public int playerReputation = 0;   // Negatife düşebilir
+
+    [Header("Level Sistemi")]
+    public int playerLevel = 1;
+    public int xpForCurrentLevel = 0;  // Mevcut level içindeki XP
+
+    /// <summary>Mevcut level'i geçmek için gereken XP miktarı (Level 1→100, Level 2→200, ...)</summary>
+    public int XpToNextLevel => 100 * playerLevel;
 
     [Header("Kalc Gelitirmeler")]
     public int bonusMaxHealth = 0;
@@ -34,16 +41,29 @@ public class GameManager : MonoBehaviour
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
-            LoadProgress(); // Oyun baþladýðýnda verileri yükle
+            LoadProgress();
         }
-        else
+        else if (instance != this)
         {
-            Destroy(gameObject);
+            // Sahne kopyası: UI panel referanslarını asıl instance'a aktar
+            instance.victoryPanel = this.victoryPanel;
+            instance.defeatPanel = this.defeatPanel;
+            instance.fleePanel = this.fleePanel;
+            instance.fleeButton = this.fleeButton;
+
+            // GameObject'i YOK ETME — butonlar bu objeye bağlı.
+            // Sadece gereksiz mantığı engelle.
+            Debug.Log("GameManager proxy: UI panelleri asıl instance'a aktarıldı ✓");
         }
     }
 
+    /// <summary>Bu instance proxy mi (sahne kopyası)?</summary>
+    private bool IsProxy => instance != null && instance != this;
+
     public void EnemyDefeated(int goldReward, int xpReward, int repReward)
     {
+        if (IsProxy) { instance.EnemyDefeated(goldReward, xpReward, repReward); return; }
+
         if (fleeButton != null) fleeButton.SetActive(false);
 
         lastMatchStatus = LastMatchResult.Won;
@@ -56,7 +76,7 @@ public class GameManager : MonoBehaviour
         lastMatchHealthDifference = player.maxHealth; 
         }
         playerGold += goldReward;
-        playerXP += xpReward;
+        AddXP(xpReward);
         playerReputation += repReward;
 
         SaveProgress(); // Kaydet
@@ -65,9 +85,11 @@ public class GameManager : MonoBehaviour
 
     public void PlayerDefeated()
     {
+        if (IsProxy) { instance.PlayerDefeated(); return; }
+
         if (fleeButton != null) fleeButton.SetActive(false);
 
-        playerReputation = Mathf.Max(0, playerReputation - 5);
+        playerReputation -= 5; // Negatife düşebilir
 
         SaveProgress(); // Kaydet
         StartCoroutine(ShowDefeatScreen());
@@ -75,6 +97,8 @@ public class GameManager : MonoBehaviour
 
     public void ShowFleeOption()
     {
+        if (IsProxy) { instance.ShowFleeOption(); return; }
+
         if (fleeButton != null && !fleeButton.activeSelf)
         {
             fleeButton.SetActive(true);
@@ -83,23 +107,37 @@ public class GameManager : MonoBehaviour
 
     public void FleeBattle()
     {
+        if (IsProxy) { instance.FleeBattle(); return; }
+
         if (fleeButton != null) fleeButton.SetActive(false);
 
-        playerReputation = Mathf.Max(0, playerReputation - 10);
+        playerReputation -= 10; // Negatife düşebilir
 
         SaveProgress(); // Kaydet
-        if (fleePanel != null) fleePanel.SetActive(true);
-        Time.timeScale = 0f;
+        if (fleePanel != null)
+        {
+            fleePanel.SetActive(true);
+            Time.timeScale = 0f;
+        }
+        else
+        {
+            Debug.LogWarning("FleePanel bulunamadı! Lobiye dönülüyor...");
+            ReturnToLobby();
+        }
     }
 
-    // --- Kayýt ve Yükleme Fonksiyonlarý ---
+    // --- Kayıt ve Yükleme Fonksiyonları ---
     public void SaveProgress()
     {
+        if (IsProxy) { instance.SaveProgress(); return; }
+
         PlayerPrefs.SetInt("PlayerXP", playerXP);
         PlayerPrefs.SetInt("PlayerRep", playerReputation);
         PlayerPrefs.SetInt("PlayerGold", playerGold);
         PlayerPrefs.SetInt("BonusHealth", bonusMaxHealth);
         PlayerPrefs.SetInt("BonusDamage", bonusDamage);
+        PlayerPrefs.SetInt("PlayerLevel", playerLevel);
+        PlayerPrefs.SetInt("XPForCurrentLevel", xpForCurrentLevel);
         //son maç durumu oyun kapatıldığında da hatırlansın diye 
         PlayerPrefs.SetInt("LastMatchStatus", (int)lastMatchStatus);
         PlayerPrefs.SetInt("LastHealthDiff", lastMatchHealthDifference);
@@ -108,11 +146,15 @@ public class GameManager : MonoBehaviour
 
     public void LoadProgress()
     {
+        if (IsProxy) { instance.LoadProgress(); return; }
+
         playerXP = PlayerPrefs.GetInt("PlayerXP", 0);
         playerReputation = PlayerPrefs.GetInt("PlayerRep", 0);
         playerGold = PlayerPrefs.GetInt("PlayerGold", 0);
         bonusMaxHealth = PlayerPrefs.GetInt("BonusHealth", 0);
         bonusDamage = PlayerPrefs.GetInt("BonusDamage", 0);
+        playerLevel = PlayerPrefs.GetInt("PlayerLevel", 1);
+        xpForCurrentLevel = PlayerPrefs.GetInt("XPForCurrentLevel", 0);
         lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
         lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
     }
@@ -120,19 +162,39 @@ public class GameManager : MonoBehaviour
     IEnumerator ShowVictoryScreen()
     {
         yield return new WaitForSecondsRealtime(1.5f);
-        if (victoryPanel != null) victoryPanel.SetActive(true);
-        Time.timeScale = 0f;
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(true);
+            Time.timeScale = 0f;
+        }
+        else
+        {
+            Debug.LogWarning("VictoryPanel bulunamadı! 3 sn sonra lobiye dönülüyor...");
+            yield return new WaitForSecondsRealtime(3f);
+            ReturnToLobby();
+        }
     }
 
     IEnumerator ShowDefeatScreen()
     {
         yield return new WaitForSecondsRealtime(1.5f);
-        if (defeatPanel != null) defeatPanel.SetActive(true);
-        Time.timeScale = 0f;
+        if (defeatPanel != null)
+        {
+            defeatPanel.SetActive(true);
+            Time.timeScale = 0f;
+        }
+        else
+        {
+            Debug.LogWarning("DefeatPanel bulunamadı! 3 sn sonra lobiye dönülüyor...");
+            yield return new WaitForSecondsRealtime(3f);
+            ReturnToLobby();
+        }
     }
 
     public void ReturnToLobby()
     {
+        if (IsProxy) { instance.ReturnToLobby(); return; }
+
         Debug.Log("Lobiye dönme tuşuna basıldı!");
         Time.timeScale = 1f;
         SceneManager.LoadScene("Araf_Lobby");
@@ -140,7 +202,26 @@ public class GameManager : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
+        if (IsProxy) { instance.ReturnToMainMenu(); return; }
+
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
+    }
+
+    // ─── XP & Level-Up Yardımcı Metot ───
+    public void AddXP(int amount)
+    {
+        if (IsProxy) { instance.AddXP(amount); return; }
+
+        playerXP += amount;
+        xpForCurrentLevel += amount;
+
+        // Taşan XP'yi sonraki level'lere aktar
+        while (xpForCurrentLevel >= XpToNextLevel)
+        {
+            xpForCurrentLevel -= XpToNextLevel;
+            playerLevel++;
+            Debug.Log("LEVEL UP! Yeni level: " + playerLevel);
+        }
     }
 }
