@@ -4,37 +4,38 @@ using UnityEngine.UI;
 
 public class EnemyAI : MonoBehaviour
 {
-    [Header("Can Ayarlarý")]
+    [Header("Can Ayarlari")]
     public int maxHealth = 100;
     private int currentHealth;
     public Image healthBarFill;
 
-    [Header("Hedef Ayarlarý")]
+    [Header("Hedef Ayarlari")]
     public Transform player;
     public float moveSpeed = 3f;
     public float detectionRange = 10f;
     public float stopDistance = 1.2f;
 
-    [Header("Saldýrý Ayarlarý")]
+    [Header("Saldiri Ayarlari")]
     public float attackCooldown = 1.5f;
     private float lastAttackTime = 0f;
 
-    [Header("Defans Ayarlarý")]
+    [Header("Defans Ayarlari")]
     public int blockProtectionDamage = 2;
     public float blockChance = 40f;
     public float blockDuration = 2.0f;
+    public float hurtDuration = 3f;
 
-    [Header("Hitbox Ayarlarý")]
+    [Header("Hitbox Ayarlari")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
     public float attackRange = 0.8f;
     public LayerMask playerLayer;
 
-    [Header("VFX Ayarlarý")]
+    [Header("VFX Ayarlari")]
     public GameObject hitEffectPrefab;
 
-    [Header("SFX Ayarlarý")]
+    [Header("SFX Ayarlari")]
     public AudioClip attackSound;
     public AudioClip hitSound;
     public AudioClip blockSound;
@@ -47,9 +48,12 @@ public class EnemyAI : MonoBehaviour
     private bool isBlocking = false;
     private bool isFacingRight = true;
     private bool isDead = false;
+    private bool isHurt = false;
+    private Coroutine hurtCoroutine;
 
     void Start()
     {
+        hurtDuration = 3f; // Enforces 3 seconds regardless of Inspector value
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
@@ -72,6 +76,11 @@ public class EnemyAI : MonoBehaviour
     void Update()
     {
         if (isDead || player == null) return;
+        if (isHurt)
+        {
+            StopMoving();
+            return;
+        }
 
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
@@ -123,7 +132,7 @@ public class EnemyAI : MonoBehaviour
 
     void FacePlayer()
     {
-        if (isAttacking || isBlocking) return;
+        if (isHurt || isAttacking || isBlocking) return;
 
         if (player.position.x > transform.position.x && !isFacingRight)
         {
@@ -220,17 +229,17 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
+            isAttacking = false;
             anim.SetTrigger("Hurt");
+            
+            if (hurtCoroutine != null) StopCoroutine(hurtCoroutine);
+            hurtCoroutine = StartCoroutine(HurtStunRoutine());
+            
             if (audioSource != null && hitSound != null) audioSource.PlayOneShot(hitSound);
 
             if (hitEffectPrefab != null)
             {
                 Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
-            }
-
-            if (!isAttacking && Random.Range(0, 100) < blockChance)
-            {
-                StartCoroutine(BlockRoutine());
             }
         }
 
@@ -252,6 +261,7 @@ public class EnemyAI : MonoBehaviour
     void Die()
     {
         isDead = true;
+        StopAllCoroutines();
         anim.SetTrigger("Die");
 
         rb.velocity = Vector2.zero;
@@ -261,6 +271,30 @@ public class EnemyAI : MonoBehaviour
         this.enabled = false;
 
         GameManager.instance.EnemyDefeated(50, 100, 10);
+    }
+
+    IEnumerator HurtStunRoutine()
+    {
+        isHurt = true;
+        isAttacking = false;
+        StopMoving();
+        
+        float timer = 0f;
+        while (timer < hurtDuration)
+        {
+            if (isDead) yield break;
+            StopMoving();
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        
+        isHurt = false;
+        hurtCoroutine = null;
+
+        if (!isDead && !isAttacking && Random.Range(0, 100) < blockChance)
+        {
+            StartCoroutine(BlockRoutine());
+        }
     }
 
     IEnumerator FlashRed()

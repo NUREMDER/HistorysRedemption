@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
     public int blockProtectionDamage = 2;
+    public float hurtDuration = 3f;
 
     [Header("Hitbox Ayarlar�")]
     public Transform highAttackPoint;
@@ -48,12 +49,18 @@ public class PlayerController : MonoBehaviour
     private bool isJumping = false;
     private bool isBlocking = false;
     private bool isAttacking = false;
+    private bool isHurt = false;
+    private Coroutine hurtCoroutine;
+    private Coroutine jumpCoroutine;
+    private Coroutine attackCoroutine;
     private float moveInput;
 
     public enum AttackDirection { Neutral, Up, Down, Forward, Backward }
 
     void Start()
     {
+        hurtDuration = 3f; // Enforces 3 seconds regardless of Inspector value
+        
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
@@ -163,6 +170,12 @@ public class PlayerController : MonoBehaviour
             {
                 isAttacking = false;
                 anim.SetTrigger("Hurt");
+                
+                if (hurtCoroutine != null) StopCoroutine(hurtCoroutine);
+                hurtCoroutine = StartCoroutine(HurtStunRoutine());
+
+                if (jumpCoroutine != null) { StopCoroutine(jumpCoroutine); jumpCoroutine = null; isJumping = false; }
+                if (attackCoroutine != null) { StopCoroutine(attackCoroutine); attackCoroutine = null; isAttacking = false; }
 
                 if (hitEffectPrefab != null)
                 {
@@ -176,6 +189,7 @@ public class PlayerController : MonoBehaviour
 
     void Die()
     {
+        StopAllCoroutines();
         anim.SetTrigger("Die");
         rb.velocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
@@ -203,6 +217,12 @@ public class PlayerController : MonoBehaviour
             isBlocking = false;
         }
 
+        if (isHurt)
+        {
+            moveInput = 0;
+            return;
+        }
+
         if (isBlocking || isAttacking)
         {
             moveInput = 0;
@@ -222,19 +242,22 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isCrouching && !isJumping)
         {
-            StartCoroutine(JumpRoutine());
+            if (jumpCoroutine != null) StopCoroutine(jumpCoroutine);
+            jumpCoroutine = StartCoroutine(JumpRoutine());
         }
 
         if (Time.time >= nextAttackTime)
         {
             if (Input.GetMouseButtonDown(0))
             {
-                StartCoroutine(PerformAttackRoutine());
+                if (attackCoroutine != null) StopCoroutine(attackCoroutine);
+                attackCoroutine = StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
             }
             else if (Input.GetKeyDown(KeyCode.F))
             {
-                StartCoroutine(PerformAttackRoutine());
+                if (attackCoroutine != null) StopCoroutine(attackCoroutine);
+                attackCoroutine = StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
             }
         }
@@ -242,7 +265,7 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        if (isBlocking || isAttacking)
+        if (isHurt || isBlocking || isAttacking)
         {
             rb.velocity = new Vector2(0, rb.velocity.y);
         }
@@ -250,6 +273,26 @@ public class PlayerController : MonoBehaviour
         {
             rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
         }
+    }
+
+    IEnumerator HurtStunRoutine()
+    {
+        isHurt = true;
+        isAttacking = false;
+        isJumping = false;
+        moveInput = 0;
+        rb.velocity = new Vector2(0, rb.velocity.y);
+        
+        float timer = 0f;
+        while (timer < hurtDuration)
+        {
+            rb.velocity = new Vector2(0, rb.velocity.y);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        
+        isHurt = false;
+        hurtCoroutine = null;
     }
 
     IEnumerator JumpRoutine()
@@ -260,6 +303,7 @@ public class PlayerController : MonoBehaviour
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         yield return new WaitForSeconds(0.1f);
         isJumping = false;
+        jumpCoroutine = null;
     }
 
     IEnumerator PerformAttackRoutine()
@@ -299,6 +343,7 @@ public class PlayerController : MonoBehaviour
 
         isAttacking = false;
         anim.SetInteger("AttackType", 0);
+        attackCoroutine = null;
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -307,9 +352,21 @@ public class PlayerController : MonoBehaviour
         {
             isGrounded = true;
             if (anim != null) 
-{
-    anim.SetBool("IsGrounded", true);
-}
+            {
+                anim.SetBool("IsGrounded", true);
+            }
+        }
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
+            if (anim != null)
+            {
+                anim.SetBool("IsGrounded", false);
+            }
         }
     }
 
@@ -323,7 +380,7 @@ public class PlayerController : MonoBehaviour
 
     void CheckFlip()
     {
-        if (isBlocking || isAttacking) return;
+        if (isHurt || isBlocking || isAttacking) return;
         float inputX = Input.GetAxisRaw("Horizontal");
 
         if (isFacingRight && inputX < 0) Flip();
