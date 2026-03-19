@@ -4,35 +4,35 @@ using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Can Ayarlarý")]
+    [Header("Can Ayarlarï¿½")]
     public int maxHealth = 100;
     private int currentHealth;
 
-    [Header("UI Ayarlarý")]
+    [Header("UI Ayarlarï¿½")]
     public Image healthBarFill;
 
-    [Header("Hareket Ayarlarý")]
+    [Header("Hareket Ayarlarï¿½")]
     public float moveSpeed = 8f;
     public float jumpForce = 12f;
     public float jumpDelay = 0.2f;
 
-    [Header("Savaþ Ayarlarý")]
+    [Header("Savaï¿½ Ayarlarï¿½")]
     public int attackDamage = 20;
     public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
     public int blockProtectionDamage = 2;
 
-    [Header("Hitbox Ayarlarý")]
+    [Header("Hitbox Ayarlarï¿½")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
     public float attackRange = 0.8f;
     public LayerMask enemyLayers;
 
-    [Header("VFX Ayarlarý")]
+    [Header("VFX Ayarlarï¿½")]
     public GameObject hitEffectPrefab;
 
-    [Header("SFX Ayarlarý")]
+    [Header("SFX Ayarlarï¿½")]
     public AudioClip attackSound;
     public AudioClip hitSound;
     public AudioClip blockSound;
@@ -306,7 +306,10 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground") && !isJumping)
         {
             isGrounded = true;
-            anim.SetBool("IsGrounded", true);
+            if (anim != null) 
+{
+    anim.SetBool("IsGrounded", true);
+}
         }
     }
 
