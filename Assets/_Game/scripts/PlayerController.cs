@@ -11,19 +11,25 @@ public class PlayerController : MonoBehaviour
     [Header("UI Ayarlar�")]
     public Image healthBarFill;
 
-    [Header("Hareket Ayarlar�")]
+    [Header("Hareket Ayarlar")]
     public float moveSpeed = 8f;
     public float jumpForce = 12f;
     public float jumpDelay = 0.2f;
 
-    [Header("Sava� Ayarlar�")]
+    [Header("Sava Ayarlar")]
     public int attackDamage = 20;
     public float attackRate = 0.4f;
     private float nextAttackTime = 0f;
+    public float throwRate = 0.5f;
+    private float nextThrowTime = 0f;
     public int blockProtectionDamage = 2;
     public float hurtDuration = 3f;
 
-    [Header("Hitbox Ayarlar�")]
+    [Header("Bıçak Fırlatma Ayarları")]
+    public GameObject knifePrefab;
+    public Transform throwPoint;
+
+    [Header("Hitbox Ayarlar")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
@@ -261,6 +267,19 @@ public class PlayerController : MonoBehaviour
                 nextAttackTime = Time.time + attackRate;
             }
         }
+
+        if (Time.time >= nextThrowTime)
+        {
+            if (Input.GetKeyDown(KeyCode.Q) && isGrounded && !isAttacking && !isBlocking && !isCrouching && !isJumping)
+            {
+                if (GameManager.instance != null && GameManager.instance.playerKnives > 0)
+                {
+                    if (attackCoroutine != null) StopCoroutine(attackCoroutine);
+                    attackCoroutine = StartCoroutine(PerformThrowRoutine());
+                    nextThrowTime = Time.time + throwRate;
+                }
+            }
+        }
     }
 
     void Move()
@@ -304,6 +323,35 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
         isJumping = false;
         jumpCoroutine = null;
+    }
+
+    IEnumerator PerformThrowRoutine()
+    {
+        isAttacking = true;
+        rb.velocity = Vector2.zero;
+
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.playerKnives--;
+            GameManager.instance.SaveProgress();
+        }
+
+        anim.SetTrigger("doThrowKnife");
+
+        yield return new WaitForSeconds(throwRate);
+
+        isAttacking = false;
+        attackCoroutine = null;
+    }
+
+    // Bu metodu Unity içerisinde "doThrowKnife" animasyonunun içine "Animation Event" olarak eklemelisin.
+    public void InstantiateKnife()
+    {
+        if (knifePrefab != null && throwPoint != null)
+        {
+            // Karakter sağa veya sola bakıyorsa, bıçak o yöne doğru doğsun
+            Instantiate(knifePrefab, throwPoint.position, transform.rotation);
+        }
     }
 
     IEnumerator PerformAttackRoutine()

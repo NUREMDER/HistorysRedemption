@@ -11,6 +11,13 @@ public class MarketManager : MonoBehaviour
     public TextMeshProUGUI damagebutton;
     public TextMeshProUGUI healthbutton;
 
+    [Header("Knife Settings")]
+    public TextMeshProUGUI knifePriceText;
+    public TextMeshProUGUI knifeButtonText;
+    public TextMeshProUGUI knifeCountText;
+    public int knifePackagePrice = 50;
+    public int knifePackageAmount = 5;
+
     [Header("Starting Prices (XP)")]
     public int healthUpgradePrice = 50;
     public int damageUpgradePrice = 100;
@@ -63,6 +70,20 @@ public class MarketManager : MonoBehaviour
         return finalPrice;
     }
 
+    public void BuyKnives()
+    {
+        int currentPrice = GetDiscountedPrice(knifePackagePrice);
+
+        if (GameManager.instance.playerXP >= currentPrice)
+        {
+            GameManager.instance.playerXP -= currentPrice;
+            GameManager.instance.playerKnives += knifePackageAmount;
+            
+            GameManager.instance.SaveProgress();
+            UpdateUI();
+        }
+    }
+
     public void BuyDamageUpgrade()
     {
         int currentPrice = GetDiscountedPrice(damageUpgradePrice);
@@ -109,6 +130,14 @@ public class MarketManager : MonoBehaviour
                 // Buton üzerinde indirimli fiyatı gösteriyoruz
                 damagebutton.text = "Upgrade: " + dPrice + "XP";
             }
+
+            int kPrice = GetDiscountedPrice(knifePackagePrice);
+            if (knifePriceText != null)
+                knifePriceText.text = "(+" + knifePackageAmount + " Bıçak)";
+            if (knifeButtonText != null)
+                knifeButtonText.text = "Satın Al: " + kPrice + "XP";
+            if (knifeCountText != null)
+                knifeCountText.text = "Mevcut Bıçak: " + GameManager.instance.playerKnives;
         }
     }
 }

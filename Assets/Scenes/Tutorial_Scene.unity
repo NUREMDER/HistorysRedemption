@@ -706,6 +706,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 411013288}
   m_CullTransparentMesh: 1
+--- !u!114 &423454561 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2429353097289670360, guid: a8264c021f5a795438efca06b4f4264a, type: 3}
+  m_PrefabInstance: {fileID: 726161251}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &484334818
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -831,6 +842,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8432380755784428953, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
+      propertyPath: healthBarFill
+      value: 
+      objectReference: {fileID: 423454561}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1384,6 +1399,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1419872730 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4716277688618013274, guid: 92d838e6c95904542bccaa3ef9762b2d, type: 3}
+  m_PrefabInstance: {fileID: 1792028707}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1447070977
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1515,6 +1541,14 @@ PrefabInstance:
     - target: {fileID: 8075409482316760628, guid: 5c7bb81721c8fdc438b4a3d65e4f4f16, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170690747900670687, guid: 5c7bb81721c8fdc438b4a3d65e4f4f16, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 117587283}
+    - target: {fileID: 8170690747900670687, guid: 5c7bb81721c8fdc438b4a3d65e4f4f16, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ReturnToLobby
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1679,6 +1713,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 363795356566867000, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 1530246176}
+    - target: {fileID: 363795356566867000, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
+      propertyPath: healthBarFill
+      value: 
+      objectReference: {fileID: 1419872730}
     - target: {fileID: 451667660716450571, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
       propertyPath: m_FlipX
       value: 0
@@ -1714,6 +1756,10 @@ PrefabInstance:
     - target: {fileID: 1399753936583630079, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
       propertyPath: m_Name
       value: NikolaTesla
+      objectReference: {fileID: 0}
+    - target: {fileID: 1399753936583630079, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

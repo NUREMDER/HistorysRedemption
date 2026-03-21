@@ -11,8 +11,9 @@ public class GameManager : MonoBehaviour
 
     [Header("Ekonomi ve İtibar")]
     public int playerGold = 0;
-    public int playerXP = 0;           // Toplam kazanılan XP
-    public int playerReputation = 0;   // Negatife düşebilir
+    public int playerXP = 0;
+    public int playerReputation = 0;
+    public int playerKnives = 0;
 
     [Header("Level Sistemi")]
     public int playerLevel = 1;
@@ -134,6 +135,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("PlayerXP", playerXP);
         PlayerPrefs.SetInt("PlayerRep", playerReputation);
         PlayerPrefs.SetInt("PlayerGold", playerGold);
+        PlayerPrefs.SetInt("PlayerKnives", playerKnives);
         PlayerPrefs.SetInt("BonusHealth", bonusMaxHealth);
         PlayerPrefs.SetInt("BonusDamage", bonusDamage);
         PlayerPrefs.SetInt("PlayerLevel", playerLevel);
@@ -151,6 +153,7 @@ public class GameManager : MonoBehaviour
         playerXP = PlayerPrefs.GetInt("PlayerXP", 0);
         playerReputation = PlayerPrefs.GetInt("PlayerRep", 0);
         playerGold = PlayerPrefs.GetInt("PlayerGold", 0);
+        playerKnives = PlayerPrefs.GetInt("PlayerKnives", 0);
         bonusMaxHealth = PlayerPrefs.GetInt("BonusHealth", 0);
         bonusDamage = PlayerPrefs.GetInt("BonusDamage", 0);
         playerLevel = PlayerPrefs.GetInt("PlayerLevel", 1);
@@ -221,7 +224,20 @@ public class GameManager : MonoBehaviour
         {
             xpForCurrentLevel -= XpToNextLevel;
             playerLevel++;
-            Debug.Log("LEVEL UP! Yeni level: " + playerLevel);
         }
+    }
+
+    public bool BuyKnives(int amount, int cost)
+    {
+        if (IsProxy) { return instance.BuyKnives(amount, cost); }
+
+        if (playerGold >= cost)
+        {
+            playerGold -= cost;
+            playerKnives += amount;
+            SaveProgress();
+            return true;
+        }
+        return false;
     }
 }
