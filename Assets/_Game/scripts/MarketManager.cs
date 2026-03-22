@@ -18,6 +18,10 @@ public class MarketManager : MonoBehaviour
     public int knifePackagePrice = 50;
     public int knifePackageAmount = 5;
 
+    [Header("Knife Upgrade Settings")]
+    public int knifeUpgradePrice = 150;
+    public TextMeshProUGUI knifeUpgradeButtonText;
+
     [Header("Starting Prices (XP)")]
     public int healthUpgradePrice = 50;
     public int damageUpgradePrice = 100;
@@ -84,6 +88,28 @@ public class MarketManager : MonoBehaviour
         }
     }
 
+    public void BuyKnifeUpgrade()
+    {
+        if (GameManager.instance == null) return;
+
+        int currentLevel = GameManager.instance.unlockedKnifeLevel;
+        if (currentLevel == 0 || currentLevel >= 3) return; // Kilitliyse veya son seviyedeyse alınmaz
+
+        int currentPrice = GetDiscountedPrice(knifeUpgradePrice);
+
+        if (GameManager.instance.playerXP >= currentPrice)
+        {
+            GameManager.instance.playerXP -= currentPrice;
+            GameManager.instance.unlockedKnifeLevel++;
+            
+            // Her yükseltmede biraz daha pahalı olsun dersen (opsiyonel)
+            knifeUpgradePrice += 100;
+
+            GameManager.instance.SaveProgress();
+            UpdateUI();
+        }
+    }
+
     public void BuyDamageUpgrade()
     {
         int currentPrice = GetDiscountedPrice(damageUpgradePrice);
@@ -133,11 +159,29 @@ public class MarketManager : MonoBehaviour
 
             int kPrice = GetDiscountedPrice(knifePackagePrice);
             if (knifePriceText != null)
-                knifePriceText.text = "(+" + knifePackageAmount + " Bıçak)";
+                knifePriceText.text = "(+" + knifePackageAmount + " Knives)";
             if (knifeButtonText != null)
-                knifeButtonText.text = "Satın Al: " + kPrice + "XP";
+                knifeButtonText.text = "Buy: " + kPrice + "XP";
             if (knifeCountText != null)
-                knifeCountText.text = "Mevcut Bıçak: " + GameManager.instance.playerKnives;
+                knifeCountText.text = "Knives Owned: " + GameManager.instance.playerKnives;
+
+            if (knifeUpgradeButtonText != null)
+            {
+                int currentLevel = GameManager.instance.unlockedKnifeLevel;
+                if (currentLevel == 0)
+                {
+                    knifeUpgradeButtonText.text = "UPGRADE (LOCKED)";
+                }
+                else if (currentLevel >= 3)
+                {
+                    knifeUpgradeButtonText.text = "UPGRADE (MAX)";
+                }
+                else
+                {
+                    int kuPrice = GetDiscountedPrice(knifeUpgradePrice);
+                    knifeUpgradeButtonText.text = "Upgrade (Lv" + (currentLevel + 1) + "): " + kuPrice + "XP";
+                }
+            }
         }
     }
 }

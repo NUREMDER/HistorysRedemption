@@ -26,8 +26,9 @@ public class PlayerController : MonoBehaviour
     public float hurtDuration = 3f;
 
     [Header("Bıçak Fırlatma Ayarları")]
-    public GameObject knifePrefab;
+    public GameObject[] knifePrefabs; // 3 tip bıçak prefab'i buraya atanacak
     public Transform throwPoint;
+    public float throwSpawnDelay = 0.3f;
 
     [Header("Hitbox Ayarlar")]
     public Transform highAttackPoint;
@@ -272,7 +273,7 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Q) && isGrounded && !isAttacking && !isBlocking && !isCrouching && !isJumping)
             {
-                if (GameManager.instance != null && GameManager.instance.playerKnives > 0)
+                if (GameManager.instance != null && GameManager.instance.playerKnives > 0 && GameManager.instance.unlockedKnifeLevel > 0)
                 {
                     if (attackCoroutine != null) StopCoroutine(attackCoroutine);
                     attackCoroutine = StartCoroutine(PerformThrowRoutine());
@@ -338,19 +339,34 @@ public class PlayerController : MonoBehaviour
 
         anim.SetTrigger("doThrowKnife");
 
-        yield return new WaitForSeconds(throwRate);
+        yield return new WaitForSeconds(throwSpawnDelay);
+
+        InstantiateKnife();
+
+        float remainingTime = throwRate - throwSpawnDelay;
+        if (remainingTime > 0)
+        {
+            yield return new WaitForSeconds(remainingTime);
+        }
 
         isAttacking = false;
         attackCoroutine = null;
     }
 
-    // Bu metodu Unity içerisinde "doThrowKnife" animasyonunun içine "Animation Event" olarak eklemelisin.
     public void InstantiateKnife()
     {
-        if (knifePrefab != null && throwPoint != null)
+        if (GameManager.instance != null && throwPoint != null && knifePrefabs != null)
         {
-            // Karakter sağa veya sola bakıyorsa, bıçak o yöne doğru doğsun
-            Instantiate(knifePrefab, throwPoint.position, transform.rotation);
+            int level = GameManager.instance.unlockedKnifeLevel;
+            // Level değeri 1'den başlar, dizide 0-1-2 indekslerine denk gelir.
+            if (level > 0 && level <= knifePrefabs.Length)
+            {
+                GameObject selectedKnife = knifePrefabs[level - 1]; // 1.seviye => indeks 0
+                if (selectedKnife != null)
+                {
+                    Instantiate(selectedKnife, throwPoint.position, transform.rotation);
+                }
+            }
         }
     }
 

@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     public int playerXP = 0;
     public int playerReputation = 0;
     public int playerKnives = 0;
+    public int unlockedKnifeLevel = 0; // 0=Kilitli, 1=Lv1, 2=Lv2, 3=Max
 
     [Header("Level Sistemi")]
     public int playerLevel = 1;
@@ -136,6 +137,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("PlayerRep", playerReputation);
         PlayerPrefs.SetInt("PlayerGold", playerGold);
         PlayerPrefs.SetInt("PlayerKnives", playerKnives);
+        PlayerPrefs.SetInt("UnlockedKnifeLevel", unlockedKnifeLevel);
         PlayerPrefs.SetInt("BonusHealth", bonusMaxHealth);
         PlayerPrefs.SetInt("BonusDamage", bonusDamage);
         PlayerPrefs.SetInt("PlayerLevel", playerLevel);
@@ -154,6 +156,7 @@ public class GameManager : MonoBehaviour
         playerReputation = PlayerPrefs.GetInt("PlayerRep", 0);
         playerGold = PlayerPrefs.GetInt("PlayerGold", 0);
         playerKnives = PlayerPrefs.GetInt("PlayerKnives", 0);
+        unlockedKnifeLevel = PlayerPrefs.GetInt("UnlockedKnifeLevel", 0);
         bonusMaxHealth = PlayerPrefs.GetInt("BonusHealth", 0);
         bonusDamage = PlayerPrefs.GetInt("BonusDamage", 0);
         playerLevel = PlayerPrefs.GetInt("PlayerLevel", 1);
@@ -239,5 +242,18 @@ public class GameManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void UnlockFirstKnife()
+    {
+        if (IsProxy) { instance.UnlockFirstKnife(); return; }
+
+        // Daha önceden açılmadıysa 1. seviyeyi aç
+        if (unlockedKnifeLevel == 0)
+        {
+            unlockedKnifeLevel = 1;
+            SaveProgress();
+            Debug.Log("İlk bıçağın kilidi açıldı!");
+        }
     }
 }

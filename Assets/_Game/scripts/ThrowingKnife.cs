@@ -13,20 +13,19 @@ public class ThrowingKnife : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         
-        // Fırlatıldığı yönü belirle (Sağa veya sola).
-        // Player sağa bakıyorsa rotation Y=0, sola bakıyorsa rotation Y=180 olacaktır.
-        rb.velocity = transform.right * speed;
+        // Bıçağın Y rotasyonu 180 çevrildiği için "transform.right"ın tersini (sola doğru olanı) alıyoruz.
+        rb.velocity = -transform.right * speed;
 
-        // Bıçak bir yere çarpmazsa 2 saniye sonra yok olsun.
+        
         Destroy(gameObject, lifetime);
     }
 
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
-        // Eğer çarptığımız obje "Player" veya kendi trigger'ımız ise yoksay.
+        
         if (hitInfo.CompareTag("Player")) return;
 
-        // Düşmana çarptıysak hasar ver
+    
         EnemyAI enemy = hitInfo.GetComponent<EnemyAI>();
         if (enemy != null)
         {
@@ -40,7 +39,7 @@ public class ThrowingKnife : MonoBehaviour
             enemy.TakeDamage(totalDamage);
         }
 
-        // Yere, duvara veya düşmana çarptığı an bıçağı yok et
+        
         Destroy(gameObject);
     }
 }
