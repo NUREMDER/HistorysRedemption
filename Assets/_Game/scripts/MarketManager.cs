@@ -83,6 +83,8 @@ public class MarketManager : MonoBehaviour
             GameManager.instance.playerXP -= currentPrice;
             GameManager.instance.playerKnives += knifePackageAmount;
             
+            GameManager.instance.UnlockFirstKnife();
+            
             GameManager.instance.SaveProgress();
             UpdateUI();
         }

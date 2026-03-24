@@ -4898,11 +4898,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 4930bb94ca493894399d7d0018b5d440, type: 3}
       propertyPath: m_LocalScale.x
-      value: 7.018456
+      value: 3.418456
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4930bb94ca493894399d7d0018b5d440, type: 3}
       propertyPath: m_LocalScale.y
-      value: 14.266475
+      value: 7.26647
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4930bb94ca493894399d7d0018b5d440, type: 3}
       propertyPath: m_LocalScale.z
@@ -5065,8 +5065,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f4c3d1dd4782b445951c5aeb83ffb61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 15
-  damage: 25
+  speed: 20
+  damage: 10
   lifetime: 2
 --- !u!96 &6260057000776364698
 TrailRenderer:

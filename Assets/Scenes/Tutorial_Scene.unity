@@ -843,9 +843,17 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8432380755784428953, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
+      propertyPath: throwPoint
+      value: 
+      objectReference: {fileID: 2010373511}
+    - target: {fileID: 8432380755784428953, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
       propertyPath: healthBarFill
       value: 
       objectReference: {fileID: 423454561}
+    - target: {fileID: 8432380755784428953, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
+      propertyPath: throwSpawnDelay
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8432380755784428953, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
       propertyPath: knifePrefabs.Array.size
       value: 3
@@ -864,7 +872,10 @@ PrefabInstance:
       objectReference: {fileID: 7461418633355534636, guid: 711d08f10434d884c846545863572553, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1428000189931355240, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2010373511}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9d4f59576c8111a4da57692a2ae53859, type: 3}
 --- !u!1 &627962564
@@ -1775,7 +1786,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1399753936583630079, guid: 14a760c50c7a5fd49bfdfd6732d74d28, type: 3}
       propertyPath: m_TagString
-      value: Untagged
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1847,6 +1858,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d6ddd3fa6efea4a4ba6c2e3fbe273e8c, type: 3}
+--- !u!1 &2010373510
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2010373511}
+  m_Layer: 3
+  m_Name: ThrowPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2010373511
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2010373510}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.15, y: 1.21, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1530246176}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2119203178 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8075409482316760628, guid: 5c7bb81721c8fdc438b4a3d65e4f4f16, type: 3}

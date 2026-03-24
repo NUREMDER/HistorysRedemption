@@ -355,18 +355,27 @@ public class PlayerController : MonoBehaviour
 
     public void InstantiateKnife()
     {
-        if (GameManager.instance != null && throwPoint != null && knifePrefabs != null)
+        if (GameManager.instance == null) { Debug.LogError("GameManager.instance is null!"); return; }
+        if (throwPoint == null) { Debug.LogError("throwPoint is NULL! Lütfen Inspector'dan Throw Point atayın."); return; }
+        if (knifePrefabs == null || knifePrefabs.Length == 0) { Debug.LogError("knifePrefabs dizisi BOŞ! Lütfen Inspector'dan Bıçak Prefab'larını atayın."); return; }
+
+        int level = GameManager.instance.unlockedKnifeLevel;
+        if (level > 0 && level <= knifePrefabs.Length)
         {
-            int level = GameManager.instance.unlockedKnifeLevel;
-            // Level değeri 1'den başlar, dizide 0-1-2 indekslerine denk gelir.
-            if (level > 0 && level <= knifePrefabs.Length)
+            GameObject selectedKnife = knifePrefabs[level - 1]; 
+            if (selectedKnife != null)
             {
-                GameObject selectedKnife = knifePrefabs[level - 1]; // 1.seviye => indeks 0
-                if (selectedKnife != null)
-                {
-                    Instantiate(selectedKnife, throwPoint.position, transform.rotation);
-                }
+                GameObject spawned = Instantiate(selectedKnife, throwPoint.position, transform.rotation);
+                Debug.Log("Bıçak başarıyla fırlatıldı! Yönü: " + transform.right);
             }
+            else
+            {
+                Debug.LogError("Knife Prefabs dizisindeki " + (level - 1) + ". eleman NULL! Lütfen prefab atayın.");
+            }
+        }
+        else
+        {
+            Debug.LogError("Geçersiz bıçak seviyesi: " + level + ". Lütfen marketten yükseltme yapıldığından veya GameManager'daki dizi boyutuyla uyuştuğundan emin olun.");
         }
     }
 

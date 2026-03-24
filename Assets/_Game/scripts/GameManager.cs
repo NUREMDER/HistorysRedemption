@@ -91,9 +91,11 @@ public class GameManager : MonoBehaviour
 
         if (fleeButton != null) fleeButton.SetActive(false);
 
-        playerReputation -= 5; // Negatife düşebilir
+        lastMatchStatus = LastMatchResult.Lost;
 
-        SaveProgress(); // Kaydet
+        // Flee yapmadan CİDDEN YENİLİNCE tüm ilerleme sıfırlanır:
+        ResetAllStats();
+
         StartCoroutine(ShowDefeatScreen());
     }
 
@@ -163,6 +165,28 @@ public class GameManager : MonoBehaviour
         xpForCurrentLevel = PlayerPrefs.GetInt("XPForCurrentLevel", 0);
         lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
         lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
+    }
+
+    public void ResetAllStats()
+    {
+        if (IsProxy) { instance.ResetAllStats(); return; }
+
+        playerXP = 0;
+        playerReputation = 0;
+        playerGold = 0;
+        playerKnives = 0;
+        unlockedKnifeLevel = 0;
+        bonusMaxHealth = 0;
+        bonusDamage = 0;
+        playerLevel = 1;
+        xpForCurrentLevel = 0;
+        
+        // Son maç durumu ve sağlık farkı gibi meta verileri sıfırlamayabilirsiniz ama isterseniz:
+        // lastMatchStatus = LastMatchResult.None;
+        // lastMatchHealthDifference = 0;
+
+        SaveProgress();
+        Debug.Log("Tüm oyun ilerlemesi (XP, Reputation, Altın, Bıçak, Geliştirmeler) SIFIRLANDI!");
     }
 
     IEnumerator ShowVictoryScreen()

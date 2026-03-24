@@ -15,6 +15,7 @@ TagManager:
   - JumpingDown1Zone
   - RunningJumpZone
   - Obstacle
+  - Enemy
   layers:
   - Default
   - TransparentFX

@@ -22,8 +22,17 @@ public class OptionsManager : MonoBehaviour
 
     public void ResetProgress()
     {
-        PlayerPrefs.DeleteAll();
-        PlayerPrefs.Save();
-        Debug.Log("ALL SAVE DATA RESET!");
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.ResetAllStats();
+            Debug.Log("OPTIONS: Progression has been reset!");
+        }
+        else
+        {
+            // Fallback: If GameManager is missing, just wipe PlayerPrefs.
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
+            Debug.Log("ALL SAVE DATA RESET via PlayerPrefs!");
+        }
     }
 }
