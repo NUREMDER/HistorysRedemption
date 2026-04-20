@@ -10,7 +10,9 @@ public class ParkourController : MonoBehaviour
     public float slideSpeedMultiplier = 0.8f;
     public float speedRecoveryRate = 3f;
     public float parkourCooldown = 0.8f;
+    public float obstacleIgnoreDuration = 1.5f;
     public float slideDuration = 0.7f;
+    public float rollDuration = 0.7f;
 
     [Header("Slide")]
     public float slideYOffset = 0.8f;
@@ -108,7 +110,8 @@ public class ParkourController : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
         {
-            if (inSlideZone || isGrounded) StartCoroutine(DoSlide());
+            if (inSlideZone) StartCoroutine(DoSlide());
+            else if (isGrounded) StartCoroutine(DoRolling());
             else if (inJumpingDownZone) DoParkour("doJumpingDown", 0f);
             else if (inJumpingDown1Zone) DoParkour("doJumpingDown1", 0f);
         }
@@ -124,12 +127,15 @@ public class ParkourController : MonoBehaviour
         anim.ResetTrigger("doJumpingDown");
         anim.ResetTrigger("doJumpingDown1");
         anim.ResetTrigger("doThrow");
+        anim.ResetTrigger("doStumble");
+        anim.ResetTrigger("doRolling");
     }
 
     private void DoParkour(string animTrigger, float upwardForce)
     {
         ClearTriggers();
         anim.SetTrigger(animTrigger);
+        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         if (upwardForce > 0f)
         {
@@ -145,6 +151,7 @@ public class ParkourController : MonoBehaviour
         isDoingParkour = true;
         ClearTriggers();
         anim.SetTrigger(animTrigger);
+        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         currentSpeed = runSpeed * speedMult;
 
@@ -167,15 +174,12 @@ public class ParkourController : MonoBehaviour
 
         ClearTriggers();
         anim.SetTrigger("doSlide");
+        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         currentSpeed = runSpeed * slideSpeedMultiplier;
 
         col.height = originalColHeight * 0.5f;
         col.center = new Vector3(originalColCenter.x, originalColCenter.y - originalColHeight * 0.25f, originalColCenter.z);
-
-        Vector3 pos = transform.position;
-        pos.y -= slideYOffset;
-        transform.position = pos;
 
         yield return new WaitForSeconds(slideDuration);
 
@@ -184,6 +188,51 @@ public class ParkourController : MonoBehaviour
 
         isSliding = false;
         isDoingParkour = false;
+    }
+
+    private IEnumerator DoRolling()
+    {
+        isDoingParkour = true;
+        isSliding = true;
+
+        ClearTriggers();
+        anim.SetTrigger("doRolling");
+        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
+
+        currentSpeed = runSpeed * slideSpeedMultiplier;
+
+        yield return new WaitForSeconds(rollDuration);
+
+        isSliding = false;
+        isDoingParkour = false;
+    }
+
+    private IEnumerator DoStumble()
+    {
+        ClearTriggers();
+        anim.SetTrigger("doStumble");
+        StartCoroutine(Cooldown(parkourCooldown));
+        
+        int playerLayer = gameObject.layer;
+        int objectLayer = LayerMask.NameToLayer("ObstacleLayer");
+        
+        Physics.IgnoreLayerCollision(playerLayer, objectLayer, true);
+        
+        yield return new WaitForSeconds(2f);
+        
+        Physics.IgnoreLayerCollision(playerLayer, objectLayer, false);
+    }
+
+    private IEnumerator IgnoreObstacleLayer(float duration)
+    {
+        int playerLayer = gameObject.layer;
+        int objectLayer = LayerMask.NameToLayer("ObstacleLayer");
+        
+        Physics.IgnoreLayerCollision(playerLayer, objectLayer, true);
+        
+        yield return new WaitForSeconds(duration);
+        
+        Physics.IgnoreLayerCollision(playerLayer, objectLayer, false);
     }
 
     private IEnumerator Cooldown(float duration)
@@ -195,6 +244,11 @@ public class ParkourController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        if (other.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer"))
+        {
+            StartCoroutine(DoStumble());
+        }
+
         string tag = other.tag;
 
         if (tag == "SlideZone" || tag == "slideZone") inSlideZone = true;
@@ -209,6 +263,14 @@ public class ParkourController : MonoBehaviour
         if (tag == "Obstacle" && !isDoingParkour)
         {
             Die();
+        }
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer"))
+        {
+            StartCoroutine(DoStumble());
         }
     }
 
