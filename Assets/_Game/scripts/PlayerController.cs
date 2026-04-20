@@ -78,11 +78,22 @@ public class PlayerController : MonoBehaviour
             maxHealth += GameManager.instance.bonusMaxHealth;
         }
 
-        currentHealth = maxHealth;
+        // Parkurdan kalan bir can var mı kontrol et
+        if (PlayerPrefs.HasKey("ParkourRemainingHealth"))
+        {
+            currentHealth = PlayerPrefs.GetInt("ParkourRemainingHealth");
+            // Dövüş sonrası tekrar yüklenirse karışmaması için bilgiyi sil
+            PlayerPrefs.DeleteKey("ParkourRemainingHealth");
+            PlayerPrefs.DeleteKey("ParkourMaxHealth"); 
+        }
+        else
+        {
+            currentHealth = maxHealth;
+        }
 
         if (healthBarFill != null)
         {
-            healthBarFill.fillAmount = 1f;
+            healthBarFill.fillAmount = (float)currentHealth / maxHealth;
         }
     }
 
@@ -261,17 +272,12 @@ public class PlayerController : MonoBehaviour
                 attackCoroutine = StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
             }
-            else if (Input.GetKeyDown(KeyCode.F))
-            {
-                if (attackCoroutine != null) StopCoroutine(attackCoroutine);
-                attackCoroutine = StartCoroutine(PerformAttackRoutine());
-                nextAttackTime = Time.time + attackRate;
-            }
         }
 
         if (Time.time >= nextThrowTime)
         {
-            if (Input.GetKeyDown(KeyCode.Q) && isGrounded && !isAttacking && !isBlocking && !isCrouching && !isJumping)
+            // F tuşu artık Q yerine bıçak fırlatmak için kullanılıyor
+            if (Input.GetKeyDown(KeyCode.F) && isGrounded && !isAttacking && !isBlocking && !isCrouching && !isJumping)
             {
                 if (GameManager.instance != null && GameManager.instance.playerKnives > 0 && GameManager.instance.unlockedKnifeLevel > 0)
                 {

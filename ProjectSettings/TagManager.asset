@@ -16,6 +16,7 @@ TagManager:
   - RunningJumpZone
   - Obstacle
   - Enemy
+  - ParkourEndZone
   layers:
   - Default
   - TransparentFX

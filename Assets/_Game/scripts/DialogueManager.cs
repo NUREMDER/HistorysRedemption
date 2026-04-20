@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using TMPro;
 using System.Collections;
 
@@ -26,7 +26,8 @@ public class DialogueManager : MonoBehaviour
     private bool isTyping = false;
 
     private PlayerController activePlayer;
-    private EnemyAI activeBoss; 
+    private EnemyAI activeBoss;
+    private ParkourController activeParkourController;
 
     void Awake()
     {
@@ -47,14 +48,35 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    // --- GÜNCELLEME: Artýk StartDialogue içine bir Boss (EnemyAI) da alabiliyor ---
+    // Shadow1 (ParkourController) icin diyalog baslatma
+    public void StartDialogue(DialogueLine[] lines, ParkourController parkourController)
+    {
+        currentDialogue = lines;
+        currentLineIndex = 0;
+
+        activePlayer = null;
+        activeBoss = null;
+        activeParkourController = parkourController;
+
+        if (activeParkourController != null)
+        {
+            activeParkourController.PauseParkour();
+        }
+
+        dialoguePanel.SetActive(true);
+        nextButton.SetActive(true);
+        StartCoroutine(TypeLine());
+    }
+
+    // Player + Boss icin diyalog baslatma (mevcut)
     public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null)
     {
         currentDialogue = lines;
         currentLineIndex = 0;
 
         activePlayer = player;
-        activeBoss = boss; // Boss'u hafýzaya al
+        activeBoss = boss;
+        activeParkourController = null;
 
         if (activePlayer != null)
         {
@@ -104,17 +126,22 @@ public class DialogueManager : MonoBehaviour
         dialoguePanel.SetActive(false);
         nextButton.SetActive(false);
 
-        
         if (activePlayer != null)
         {
             activePlayer.enabled = true;
         }
 
-        
         if (activeBoss != null)
         {
             activeBoss.enabled = true;
-            Debug.Log("TESLA UYANDI! SAVAÞ BAÞLADI!");
+            Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
+        }
+
+        // Shadow1 parkura devam etsin
+        if (activeParkourController != null)
+        {
+            activeParkourController.ResumeParkour();
+            Debug.Log("Diyalog bitti, parkura devam!");
         }
     }
 }
