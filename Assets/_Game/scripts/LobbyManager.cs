@@ -8,6 +8,9 @@ public class LobbyManager : MonoBehaviour
     [Header("Arayüz Panelleri")]
     public GameObject marketPanel; 
 
+    [Header("Bölüm Seçim Butonları")]
+    public Button[] chapterButtons; // Ch1, Ch2, Ch3 butonlarını sırayla sürükle
+
     [Header("XP & Level UI")]
     public Image xpBarFill;              // Filled Image — XP bar doluluk göstergesi
     public TextMeshProUGUI levelText;    // "Level 3" gibi metin
@@ -24,7 +27,33 @@ public class LobbyManager : MonoBehaviour
     void Start()
     {
         UpdateLobbyUI(); // Lobi açıldığında değerleri yazdır
+        CheckChapterLocks(); // Bölüm kilitlerini kontrol et
     }
+
+    public void CheckChapterLocks()
+{
+    if (GameManager.instance == null) { Debug.LogError("LOBBY: GameManager bulunamadı!"); return; }
+    if (chapterButtons == null || chapterButtons.Length == 0) { Debug.LogError("LOBBY: Butonlar diziye eklenmemiş!"); return; }
+
+    int unlocked = GameManager.instance.unlockedChapter;
+    Debug.Log("LOBBY KONTROL: Şu an açılmış olan bölüm sayısı: " + unlocked);
+
+    for (int i = 0; i < chapterButtons.Length; i++)
+    {
+        if (chapterButtons[i] == null) { Debug.LogError("LOBBY: " + i + ". indeksteki buton boş!"); continue; }
+
+        // Mantığı basit tutalım
+        bool sartsaglandi = (i + 1 <= unlocked);
+        chapterButtons[i].interactable = sartsaglandi;
+
+        // Görsel olarak da emin olalım: Kilitliyse butonu biraz şeffaf yap
+        Color c = chapterButtons[i].image.color;
+        c.a = sartsaglandi ? 1f : 0.3f; 
+        chapterButtons[i].image.color = c;
+
+        Debug.Log(chapterButtons[i].name + " butonu aktif mi? " + sartsaglandi);
+    }
+}
 
     public void UpdateLobbyUI()
     {
@@ -77,6 +106,13 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    public void LoadChapter(string sceneName)
+    {
+        Debug.Log(sceneName + " sahnesine gidiliyor...");
+        Time.timeScale = 1f; // Oyunun donuk kalmadığından emin olalım
+        SceneManager.LoadScene(sceneName);
+    }
+
     public void GoToMainMenu()
     {
         Time.timeScale = 1f;
@@ -88,4 +124,8 @@ public class LobbyManager : MonoBehaviour
         Debug.Log("OYUNDAN ÇIKILIYOR...");
         Application.Quit();
     }
+    public void StartChapter2()
+{
+    SceneManager.LoadScene(6);
+}
 }

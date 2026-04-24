@@ -1758,6 +1758,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   marketPanel: {fileID: 1526781963}
+  chapterButtons:
+  - {fileID: 1606218271}
+  - {fileID: 503098038}
+  - {fileID: 133840441}
   xpBarFill: {fileID: 0}
   levelText: {fileID: 0}
   xpText: {fileID: 33603217}
@@ -1864,16 +1868,16 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1019228060}
-        m_TargetAssemblyTypeName: MapManager, Assembly-CSharp
-        m_MethodName: ClickChapter2
+      - m_Target: {fileID: 424851262}
+        m_TargetAssemblyTypeName: LobbyManager, Assembly-CSharp
+        m_MethodName: StartChapter2
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument: Chapter2Run
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &503098039

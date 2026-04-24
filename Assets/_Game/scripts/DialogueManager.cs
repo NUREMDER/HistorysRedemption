@@ -29,6 +29,8 @@ public class DialogueManager : MonoBehaviour
     private EnemyAI activeBoss;
     private ParkourController activeParkourController;
 
+    public GameObject bossHealthBar;
+
     void Awake()
     {
         if (instance == null) instance = this;
@@ -129,6 +131,19 @@ public class DialogueManager : MonoBehaviour
         if (activePlayer != null)
         {
             activePlayer.enabled = true;
+        }
+
+        // --- CAN BARINI AKTİF ETME (Garantili ve Şartsız Yöntem) ---
+        // Boss'un aktif olup olmamasından bağımsız olarak, diyalog bittiği an bu barı açıyoruz.
+        if (bossHealthBar != null)
+        {
+            bossHealthBar.SetActive(true); 
+            Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
+        }
+        else
+        {
+            // Eğer hala görünmüyorsa Inspector'dan sürüklemeyi unutmuşsun demektir.
+            Debug.LogError("DİKKAT: bossHealthBar kutucuğu hala boş!");
         }
 
         if (activeBoss != null)
