@@ -37,6 +37,9 @@ public class GameManager : MonoBehaviour
     public LastMatchResult lastMatchStatus = LastMatchResult.None;
     public int lastMatchHealthDifference = 0;
 
+    [Header("Bölüm Kilitleri")]
+    public int unlockedChapter = 1; // Başlangıçta sadece Chapter 1 açık
+
     void Awake()
     {
         if (instance == null)
@@ -63,27 +66,47 @@ public class GameManager : MonoBehaviour
     private bool IsProxy => instance != null && instance != this;
 
     public void EnemyDefeated(int goldReward, int xpReward, int repReward)
+{
+    if (IsProxy) { instance.EnemyDefeated(goldReward, xpReward, repReward); return; }
+
+    if (fleeButton != null) fleeButton.SetActive(false);
+
+    lastMatchStatus = LastMatchResult.Won;
+    string currentSceneName = SceneManager.GetActiveScene().name; // Mevcut sahne ismini al
+    lastWonSceneName = currentSceneName;
+
+    // --- HATAYI BULMAK İÇİN BU LOGLARI EKLE ---
+    Debug.Log("Şu anki Sahne: " + currentSceneName);
+    Debug.Log("Mevcut unlockedChapter: " + unlockedChapter);
+
+    // --- BÖLÜM KİLİDİ AÇMA MANTIĞI ---
+    // Chapter 1'in final sahnesi Tutorial_Scene olduğu için kontrolü buna göre yapıyoruz.
+    if (currentSceneName == "Tutorial_Scene" && unlockedChapter < 2)
     {
-        if (IsProxy) { instance.EnemyDefeated(goldReward, xpReward, repReward); return; }
-
-        if (fleeButton != null) fleeButton.SetActive(false);
-
-        lastMatchStatus = LastMatchResult.Won;
-        lastWonSceneName = SceneManager.GetActiveScene().name;
-
-        PlayerController player = GameObject.FindObjectOfType<PlayerController>();
-        if (player != null)
-        {
-        
-        lastMatchHealthDifference = player.maxHealth; 
-        }
-        playerGold += goldReward;
-        AddXP(xpReward);
-        playerReputation += repReward;
-
-        SaveProgress(); // Kaydet
-        StartCoroutine(ShowVictoryScreen());
+        unlockedChapter = 2;
+        Debug.Log("Chapter 2 Kilidi Açıldı!");
     }
+    // Eğer Chapter 2'nin final sahne ismi farklıysa burayı ona göre güncelleyebilirsin.
+    else if (currentSceneName == "Chapter2" && unlockedChapter < 3)
+    {
+        unlockedChapter = 3;
+        Debug.Log("Chapter 3 Kilidi Açıldı!");
+    }
+    // ---------------------------------
+
+    PlayerController player = GameObject.FindObjectOfType<PlayerController>();
+    if (player != null)
+    {
+        lastMatchHealthDifference = player.maxHealth; 
+    }
+
+    playerGold += goldReward;
+    AddXP(xpReward);
+    playerReputation += repReward;
+
+    SaveProgress(); // unlockedChapter bilgisini de kaydeder (Eğer SaveProgress'e eklediysen)
+    StartCoroutine(ShowVictoryScreen());
+}
 
     public void PlayerDefeated()
     {
@@ -147,6 +170,7 @@ public class GameManager : MonoBehaviour
         //son maç durumu oyun kapatıldığında da hatırlansın diye 
         PlayerPrefs.SetInt("LastMatchStatus", (int)lastMatchStatus);
         PlayerPrefs.SetInt("LastHealthDiff", lastMatchHealthDifference);
+        PlayerPrefs.SetInt("UnlockedChapter", unlockedChapter);
         PlayerPrefs.Save();
     }
 
@@ -165,6 +189,7 @@ public class GameManager : MonoBehaviour
         xpForCurrentLevel = PlayerPrefs.GetInt("XPForCurrentLevel", 0);
         lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
         lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
+        unlockedChapter = PlayerPrefs.GetInt("UnlockedChapter", 1);
     }
 
     public void ResetAllStats()

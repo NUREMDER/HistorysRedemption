@@ -23,4 +23,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ParkurDeneme.unity
     guid: 859f34d9ea6e645dfa7d5a55ffaef067
+  - enabled: 1
+    path: Assets/Scenes/Chapter2.unity
+    guid: d5be3513c3e7b4bd0942481ff607e5bb
   m_configObjects: {}

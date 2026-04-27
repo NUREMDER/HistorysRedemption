@@ -20,19 +20,6 @@ public class MapManager : MonoBehaviour
 
     void Awake() { instance = this; }
 
-
-    public void ClickChapter2()
-    {
-        // Bölüm Adı, Fiyat, Gereken Önceki Bölüm Galibiyeti
-        HandleChapterClick("Chapter 2", "Chapter2_Scene", 500, "BattleScene");
-    }
-
-    public void ClickChapter3()
-    {
-        HandleChapterClick("Chapter 3", "Chapter3_Scene", 1000, "Chapter2_Scene");
-    }
-
-
     private void HandleChapterClick(string dispName, string sceneName, int price, string requiredScene)
     {
         selectedSceneName = sceneName;

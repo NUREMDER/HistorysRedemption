@@ -29,6 +29,10 @@ public class DialogueManager : MonoBehaviour
     private EnemyAI activeBoss;
     private ParkourController activeParkourController;
 
+    public GameObject bossHealthBar;
+
+    public TextMeshProUGUI countdownText;
+
     void Awake()
     {
         if (instance == null) instance = this;
@@ -123,8 +127,74 @@ public class DialogueManager : MonoBehaviour
 
     void EndDialogue()
     {
+        Debug.Log("EndDialogue tetiklendi. ActiveBoss: " + (activeBoss != null));
         dialoguePanel.SetActive(false);
         nextButton.SetActive(false);
+
+        // --- COUNTDOWN MANTIĞI ---
+        if (bossHealthBar != null)
+        {
+            StartCoroutine(CountdownRoutine());
+        }
+        else
+        {
+            if (activePlayer != null)
+            {
+                activePlayer.enabled = true;
+            }
+
+            // --- CAN BARINI AKTİF ETME (Garantili ve Şartsız Yöntem) ---
+            // Boss'un aktif olup olmamasından bağımsız olarak, diyalog bittiği an bu barı açıyoruz.
+            if (bossHealthBar != null)
+            {
+                bossHealthBar.SetActive(true); 
+                Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
+            }
+            else
+            {
+                // Eğer hala görünmüyorsa Inspector'dan sürüklemeyi unutmuşsun demektir.
+                Debug.LogError("DİKKAT: bossHealthBar kutucuğu hala boş!");
+            }
+
+            if (activeBoss != null)
+            {
+                activeBoss.enabled = true;
+                Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
+            }
+
+            // Shadow1 parkura devam etsin
+            if (activeParkourController != null)
+            {
+                activeParkourController.ResumeParkour();
+                Debug.Log("Diyalog bitti, parkura devam!");
+            }
+        }
+    }
+
+    IEnumerator CountdownRoutine()
+    {
+        if (bossHealthBar != null)
+        {
+            bossHealthBar.SetActive(true);
+            Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
+        }
+
+        Time.timeScale = 0f;
+        countdownText.gameObject.SetActive(true);
+
+        int counter = 3;
+        while (counter > 0)
+        {
+            countdownText.text = counter.ToString();
+            yield return new WaitForSecondsRealtime(1f);
+            counter--;
+        }
+
+        countdownText.text = "FIGHT!";
+        yield return new WaitForSecondsRealtime(0.7f);
+        countdownText.gameObject.SetActive(false);
+
+        Time.timeScale = 1f;
 
         if (activePlayer != null)
         {
@@ -137,7 +207,6 @@ public class DialogueManager : MonoBehaviour
             Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
         }
 
-        // Shadow1 parkura devam etsin
         if (activeParkourController != null)
         {
             activeParkourController.ResumeParkour();

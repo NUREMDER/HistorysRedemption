@@ -66,6 +66,8 @@
     <Compile Include="Assets/_Game/scripts/MapManager.cs" />
     <Compile Include="Assets/_Game/scripts/EnemyController.cs" />
     <Compile Include="Assets/_Game/scripts/GameManager.cs" />
+    <Compile Include="Assets/_Game/scripts/ThrowingKnife.cs" />
+    <Compile Include="Assets/_Game/scripts/PauseManager.cs" />
     <Compile Include="Assets/_Game/scripts/ParkourController.cs" />
     <Compile Include="Assets/_Game/scripts/MarketManager.cs" />
     <Compile Include="Assets/_Game/scripts/DialogueManager.cs" />
@@ -77,10 +79,14 @@
     <Compile Include="Assets/_Game/scripts/LevelManager.cs" />
     <Compile Include="Assets/_Game/scripts/LobbyManager.cs" />
     <Compile Include="Assets/_Game/scripts/CinematicTrigger.cs" />
+    <Compile Include="Assets/_Game/scripts/EndZoneTrigger.cs" />
     <Compile Include="Assets/_Game/scripts/OptionsManager.cs" />
     <Compile Include="Assets/_Game/scripts/SettingsManager.cs" />
     <Compile Include="Assets/_Game/scripts/MainMenuManager.cs" />
+    <Compile Include="Assets/_Game/scripts/RotateLoading.cs" />
+    <Compile Include="Assets/_Game/scripts/BackgroundMusic.cs" />
     <Compile Include="Assets/_Game/scripts/SelfDestruct.cs" />
+    <Compile Include="Assets/_Game/scripts/SceneChanger.cs" />
     <Compile Include="Assets/_Game/scripts/CameraTrigger.cs" />
   </ItemGroup>
   <ItemGroup>
