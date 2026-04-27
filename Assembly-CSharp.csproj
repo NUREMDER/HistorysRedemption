@@ -67,6 +67,7 @@
     <Compile Include="Assets/_Game/scripts/EnemyController.cs" />
     <Compile Include="Assets/_Game/scripts/GameManager.cs" />
     <Compile Include="Assets/_Game/scripts/ThrowingKnife.cs" />
+    <Compile Include="Assets/_Game/scripts/PauseManager.cs" />
     <Compile Include="Assets/_Game/scripts/ParkourController.cs" />
     <Compile Include="Assets/_Game/scripts/MarketManager.cs" />
     <Compile Include="Assets/_Game/scripts/DialogueManager.cs" />

@@ -125,7 +125,10 @@ public class LobbyManager : MonoBehaviour
         Application.Quit();
     }
     public void StartChapter2()
-{
-    SceneManager.LoadScene(6);
-}
+    {
+        SceneManager.LoadScene(6);
+    }
+    public void StartChapter3(){
+        SceneManager.LoadScene(8);
+    }
 }
