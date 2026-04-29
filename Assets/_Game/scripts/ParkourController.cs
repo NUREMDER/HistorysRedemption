@@ -57,6 +57,9 @@ public class ParkourController : MonoBehaviour
     private bool inJumpingDown1Zone = false;
     private bool inRunningJumpZone = false;
 
+    private bool isIgnoringObstacles = false;
+    private bool isStumbling = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -116,19 +119,19 @@ public class ParkourController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
         {
-            if (inBigJumpZone) StartCoroutine(DoParkourDelayed("doBigJump", jumpForce * 1.5f, bigJumpSpeedMultiplier, bigJumpDelay));
-            else if (inJumpOverZone) StartCoroutine(DoParkourDelayed("doJumpOver", jumpForce, jumpOverSpeedMultiplier, jumpDelay));
-            else if (inRunningJumpZone) DoParkour("doRunningJump", jumpForce);
-            else if (inJumping1Zone) DoParkour("doJumping1", jumpForce);
-            else if (inThrowZone) DoParkour("doThrow", 0f);
-            else if (isGrounded) DoParkour("doRunningJump", jumpForce);
+            if (inBigJumpZone) StartCoroutine(DoParkourDelayed("doBigJump", jumpForce * 1.5f, bigJumpSpeedMultiplier, bigJumpDelay, true));
+            else if (inJumpOverZone) StartCoroutine(DoParkourDelayed("doJumpOver", jumpForce, jumpOverSpeedMultiplier, jumpDelay, true));
+            else if (inRunningJumpZone) DoParkour("doRunningJump", jumpForce, true);
+            else if (inJumping1Zone) DoParkour("doJumping1", jumpForce, true);
+            else if (inThrowZone) DoParkour("doThrow", 0f, true);
+            else if (isGrounded) DoParkour("doRunningJump", jumpForce, false);
         }
         else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
         {
             if (inSlideZone) StartCoroutine(DoSlide());
-            else if (isGrounded) StartCoroutine(DoRolling());
-            else if (inJumpingDownZone) DoParkour("doJumpingDown", 0f);
-            else if (inJumpingDown1Zone) DoParkour("doJumpingDown1", 0f);
+            else if (isGrounded) StartCoroutine(DoRolling(false));
+            else if (inJumpingDownZone) DoParkour("doJumpingDown", 0f, true);
+            else if (inJumpingDown1Zone) DoParkour("doJumpingDown1", 0f, true);
         }
     }
 
@@ -146,11 +149,11 @@ public class ParkourController : MonoBehaviour
         anim.ResetTrigger("doRolling");
     }
 
-    private void DoParkour(string animTrigger, float upwardForce)
+    private void DoParkour(string animTrigger, float upwardForce, bool ignoreObstacles = true)
     {
         ClearTriggers();
         anim.SetTrigger(animTrigger);
-        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
+        if (ignoreObstacles) StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         if (upwardForce > 0f)
         {
@@ -161,12 +164,12 @@ public class ParkourController : MonoBehaviour
         StartCoroutine(Cooldown(parkourCooldown));
     }
 
-    private IEnumerator DoParkourDelayed(string animTrigger, float upwardForce, float speedMult, float delay)
+    private IEnumerator DoParkourDelayed(string animTrigger, float upwardForce, float speedMult, float delay, bool ignoreObstacles = true)
     {
         isDoingParkour = true;
         ClearTriggers();
         anim.SetTrigger(animTrigger);
-        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
+        if (ignoreObstacles) StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         currentSpeed = runSpeed * speedMult;
 
@@ -205,14 +208,14 @@ public class ParkourController : MonoBehaviour
         isDoingParkour = false;
     }
 
-    private IEnumerator DoRolling()
+    private IEnumerator DoRolling(bool ignoreObstacles = true)
     {
         isDoingParkour = true;
         isSliding = true;
 
         ClearTriggers();
         anim.SetTrigger("doRolling");
-        StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
+        if (ignoreObstacles) StartCoroutine(IgnoreObstacleLayer(obstacleIgnoreDuration));
 
         currentSpeed = runSpeed * slideSpeedMultiplier;
 
@@ -224,13 +227,19 @@ public class ParkourController : MonoBehaviour
 
     private IEnumerator DoStumble(Collider obstacleCollider)
     {
+        if (isStumbling) yield break;
+        isStumbling = true;
         isDoingParkour = true;
         ClearTriggers();
         anim.SetTrigger("doStumble");
 
         // Engele çarpınca can azalt
         TakeDamage(obstacleDamage);
-        if (isDead) yield break;
+        if (isDead) 
+        {
+            isStumbling = false;
+            yield break;
+        }
         
         int playerLayer = gameObject.layer;
         int objectLayer = LayerMask.NameToLayer("ObstacleLayer");
@@ -272,10 +281,12 @@ public class ParkourController : MonoBehaviour
         Physics.IgnoreLayerCollision(playerLayer, objectLayer, false);
         
         StartCoroutine(Cooldown(0.1f)); 
+        isStumbling = false;
     }
 
     private IEnumerator IgnoreObstacleLayer(float duration)
     {
+        isIgnoringObstacles = true;
         int playerLayer = gameObject.layer;
         int objectLayer = LayerMask.NameToLayer("ObstacleLayer");
         
@@ -284,6 +295,7 @@ public class ParkourController : MonoBehaviour
         yield return new WaitForSeconds(duration);
         
         Physics.IgnoreLayerCollision(playerLayer, objectLayer, false);
+        isIgnoringObstacles = false;
     }
 
     private IEnumerator Cooldown(float duration)
@@ -295,7 +307,7 @@ public class ParkourController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer") && !isDoingParkour)
+        if (other.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer") && !isIgnoringObstacles && !isStumbling)
         {
             StartCoroutine(DoStumble(other));
         }
@@ -325,7 +337,7 @@ public class ParkourController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer") && !isDoingParkour)
+        if (collision.gameObject.layer == LayerMask.NameToLayer("ObstacleLayer") && !isIgnoringObstacles && !isStumbling)
         {
             StartCoroutine(DoStumble(collision.collider));
         }
