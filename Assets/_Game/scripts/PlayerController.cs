@@ -136,9 +136,16 @@ public class PlayerController : MonoBehaviour
         foreach (Collider2D enemy in hitEnemies)
         {
             EnemyAI enemyAI = enemy.GetComponent<EnemyAI>();
+            TeslaAI teslaAI = enemy.GetComponent<TeslaAI>();
+
             if (enemyAI != null)
             {
                 enemyAI.TakeDamage(totalDamage);
+                hasHit = true;
+            }
+            else if (teslaAI != null)
+            {
+                teslaAI.TakeDamage(totalDamage);
                 hasHit = true;
             }
         }

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using System.Collections;
 
@@ -27,6 +27,7 @@ public class DialogueManager : MonoBehaviour
 
     private PlayerController activePlayer;
     private EnemyAI activeBoss;
+    private TeslaAI activeTeslaBoss;
     private ParkourController activeParkourController;
 
     public GameObject bossHealthBar;
@@ -73,14 +74,22 @@ public class DialogueManager : MonoBehaviour
     }
 
     // Player + Boss icin diyalog baslatma (mevcut)
-    public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null)
+    public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null, TeslaAI teslaBoss = null)
     {
         currentDialogue = lines;
         currentLineIndex = 0;
 
         activePlayer = player;
         activeBoss = boss;
+        activeTeslaBoss = teslaBoss;
         activeParkourController = null;
+
+        if (activeTeslaBoss != null)
+        {
+            activeTeslaBoss.enabled = false;
+            Rigidbody2D rb = activeTeslaBoss.GetComponent<Rigidbody2D>();
+            if (rb != null) rb.velocity = Vector2.zero;
+        }
 
         if (activePlayer != null)
         {
@@ -161,6 +170,11 @@ public class DialogueManager : MonoBehaviour
                 activeBoss.enabled = true;
                 Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
             }
+            if (activeTeslaBoss != null)
+            {
+                activeTeslaBoss.enabled = true;
+                Debug.Log("TESLA UYANDI! SAVAS BASLADI!");
+            }
 
             // Shadow1 parkura devam etsin
             if (activeParkourController != null)
@@ -205,6 +219,12 @@ public class DialogueManager : MonoBehaviour
         {
             activeBoss.enabled = true;
             Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
+        }
+
+        if (activeTeslaBoss != null)
+        {
+            activeTeslaBoss.enabled = true;
+            Debug.Log("TESLA UYANDI! SAVAS BASLADI!");
         }
 
         if (activeParkourController != null)

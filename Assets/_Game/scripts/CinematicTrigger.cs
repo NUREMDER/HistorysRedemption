@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class CinematicTrigger : MonoBehaviour
 {
@@ -6,6 +6,7 @@ public class CinematicTrigger : MonoBehaviour
 
     [Header("Diyalog Bitince Uyanacak Boss (Istege Bagli)")]
     public EnemyAI bossToWakeUp;
+    public TeslaAI teslaBossToWakeUp;
 
     private bool hasTriggered = false;
 
@@ -20,7 +21,7 @@ public class CinematicTrigger : MonoBehaviour
                 hasTriggered = true;
                 if (DialogueManager.instance != null)
                 {
-                    DialogueManager.instance.StartDialogue(conversation, player, bossToWakeUp);
+                    DialogueManager.instance.StartDialogue(conversation, player, bossToWakeUp, teslaBossToWakeUp);
                 }
             }
         }
