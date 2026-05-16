@@ -6,6 +6,7 @@ public class ThrowingKnife : MonoBehaviour
     public float speed = 15f;
     public int damage = 25;
     public float lifetime = 2f; 
+    public bool isEnemyProjectile = false; // Düşman tarafından fırlatıldıysa işaretlenir
 
     private Rigidbody2D rb;
 
@@ -29,38 +30,59 @@ public class ThrowingKnife : MonoBehaviour
         transform.Rotate(0f, 180f, 0f);
 
         TrailRenderer trail = GetComponent<TrailRenderer>();
-        if (trail != null) trail.enabled = false;
+        if (trail != null) trail.enabled = true;
         
         Destroy(gameObject, lifetime);
     }
 
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
-        // Kendi karakterimize çarpmasını engelle
-        if (hitInfo.CompareTag("Player")) return;
-
-        // 4. "EnemyAI" bileşeni, dokunulan objede VEYA onun en üst (Parent) objesinde var mı kontrol et
-        EnemyAI enemy = hitInfo.GetComponentInParent<EnemyAI>();
-        
-        if (enemy != null)
+        if (isEnemyProjectile)
         {
-            int totalDamage = damage;
-            if (GameManager.instance != null)
+            // Düşmanın kendi mermisi kendisine veya kendi triggerlarına çarpmasın
+            if (hitInfo.CompareTag("Enemy") || hitInfo.GetComponentInParent<EnemyAI>() != null || hitInfo.GetComponentInParent<TeslaAI>() != null) return;
+
+            PlayerController player = hitInfo.GetComponent<PlayerController>();
+            if (player != null)
             {
-                totalDamage += GameManager.instance.bonusDamage;
+                player.TakeDamage(damage);
+                Debug.Log("Düşman mermisi oyuncuyu vurdu!");
+                Destroy(gameObject);
             }
-            
-            enemy.TakeDamage(totalDamage);
-            Debug.Log("Bıçak düşmanı vurdu: " + enemy.gameObject.name);
-            Destroy(gameObject); // Düşmana vurduktan sonra yok ol
+            else if (!hitInfo.isTrigger)
+            {
+                Debug.Log("Düşman mermisi " + hitInfo.name + " objesine çarptığı için YOK OLDU!");
+                Destroy(gameObject);
+            }
         }
         else
         {
-            // Eğer trigger olmayan bir duvara / yere çarpılırsa yok ol
-            if (!hitInfo.isTrigger)
+            // Kendi karakterimize çarpmasını engelle
+            if (hitInfo.CompareTag("Player")) return;
+
+            // 4. "EnemyAI" bileşeni, dokunulan objede VEYA onun en üst (Parent) objesinde var mı kontrol et
+            EnemyAI enemy = hitInfo.GetComponentInParent<EnemyAI>();
+            
+            if (enemy != null)
             {
-                Debug.Log("Bıçak " + hitInfo.name + " objesine çarptığı için YOK OLDU!");
-                Destroy(gameObject);
+                int totalDamage = damage;
+                if (GameManager.instance != null)
+                {
+                    totalDamage += GameManager.instance.bonusDamage;
+                }
+                
+                enemy.TakeDamage(totalDamage);
+                Debug.Log("Bıçak düşmanı vurdu: " + enemy.gameObject.name);
+                Destroy(gameObject); // Düşmana vurduktan sonra yok ol
+            }
+            else
+            {
+                // Eğer trigger olmayan bir duvara / yere çarpılırsa yok ol
+                if (!hitInfo.isTrigger)
+                {
+                    Debug.Log("Bıçak " + hitInfo.name + " objesine çarptığı için YOK OLDU!");
+                    Destroy(gameObject);
+                }
             }
         }
     }

@@ -6,7 +6,7 @@ public class SceneChanger : MonoBehaviour
 {
     [Header("Görsel Ayarlar")]
     public GameObject loadingCanvas; // Dönen simgenin olduğu Canvas
-    public float waitTime = 16000f;      // Kaç saniye dönecek?
+    public float waitTime = 3f;      // Loading ekranı kaç saniye gözükecek?
 
     // Bu fonksiyonu parkur bittiğinde veya bir butona basıldığında çağıracağız
     public void ChangeScene(string targetSceneName)

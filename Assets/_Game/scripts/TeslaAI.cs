@@ -19,6 +19,21 @@ public class TeslaAI : MonoBehaviour
     public float attackCooldown = 1.5f;
     private float lastAttackTime = 0f;
 
+    [Header("Animasyon Süreleri")]
+    public float attackHitDelay = 0.3f; // Vuruşun gerçekleşeceği an
+    public float attackAnimationDuration = 1.0f; // Animasyonun toplam süresi
+    public float throwDelay = 0.3f; // Fırlatmanın gerçekleşeceği an
+    public float throwAnimationDuration = 1.0f; // Fırlatma animasyonunun toplam süresi
+
+    [Header("Menzilli Saldiri (Elektrik)")]
+    public bool enableRangedAttack = true;
+    public GameObject electricityPrefab; // Tesla'nin kendi elektrik prefab'i (TeslaProjectile scripti olan)
+    public Transform throwPoint;
+    public float rangedAttackRange = 8f;
+    public float minRangedDistance = 3f;
+    public float rangedAttackCooldown = 3f;
+    private float lastRangedAttackTime = 0f;
+
     [Header("Defans Ayarlari")]
     public int blockProtectionDamage = 2;
     public float blockChance = 40f;
@@ -42,6 +57,10 @@ public class TeslaAI : MonoBehaviour
     public Animator modelAnimator; // FBX içindeki Animator buraya atanacak
     public SkinnedMeshRenderer[] meshRenderers; // Hasar yediğinde kızarması için 3D meshler
 
+    [Header("Model Yön Ayarlari")]
+    [Tooltip("FBX modelin sağa baktığındaki Y rotasyon değeri (derece). Inspector'dan değil, koddan ayarlanır.")]
+    public float modelRotationOffset = -90f;
+
     private Rigidbody2D rb;
     private AudioSource audioSource;
     private bool isAttacking = false;
@@ -50,6 +69,9 @@ public class TeslaAI : MonoBehaviour
     private bool isDead = false;
     private bool isHurt = false;
     private Coroutine hurtCoroutine;
+    private bool isFlashing = false;
+    private Quaternion rightFacingRotation;
+    private Quaternion leftFacingRotation;
 
     void Start()
     {
@@ -72,6 +94,10 @@ public class TeslaAI : MonoBehaviour
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
         }
+
+        // Sahne rotasyonunu kaydet ve flip için kullan (Quaternion = gimbal lock yok)
+        rightFacingRotation = transform.rotation;
+        leftFacingRotation = transform.rotation * Quaternion.Euler(0f, 180f, 0f);
     }
 
     void Update()
@@ -79,6 +105,7 @@ public class TeslaAI : MonoBehaviour
         if (isDead || player == null) return;
         if (isHurt)
         {
+            FacePlayer(); // Hasar yerken de player'a bak
             StopMoving();
             return;
         }
@@ -93,6 +120,16 @@ public class TeslaAI : MonoBehaviour
             {
                 StopMoving();
                 return;
+            }
+
+            // Menzilli Saldırı Kontrolü
+            if (enableRangedAttack && distanceToPlayer > minRangedDistance && distanceToPlayer < rangedAttackRange && !isAttacking)
+            {
+                if (Time.time >= lastRangedAttackTime + rangedAttackCooldown)
+                {
+                    StartCoroutine(ThrowKnifeRoutine());
+                    return; // Eğer fırlatıyorsa yürümeye çalışmasın
+                }
             }
 
             if (distanceToPlayer > stopDistance && !isAttacking)
@@ -135,7 +172,7 @@ public class TeslaAI : MonoBehaviour
 
     void FacePlayer()
     {
-        if (isHurt || isBlocking) return;
+        // Tüm animasyonlarda (Hurt, Block, Attack vs.) Tesla her zaman player'a baksın
 
         if (player.position.x > transform.position.x && !isFacingRight)
         {
@@ -150,8 +187,8 @@ public class TeslaAI : MonoBehaviour
     void Flip()
     {
         isFacingRight = !isFacingRight;
-        // 3D modelin yönünü döndür (Y ekseninde 180 derece)
-        transform.Rotate(0f, 180f, 0f);
+        // Quaternion ile flip (gimbal lock olmaz, X ve Z asla bozulmaz)
+        transform.rotation = isFacingRight ? rightFacingRotation : leftFacingRotation;
     }
 
     IEnumerator AttackRoutine()
@@ -171,13 +208,66 @@ public class TeslaAI : MonoBehaviour
 
         lastAttackTime = Time.time;
 
-        yield return new WaitForSeconds(0.5f);
+        // Vuruş anı (Animasyonun tam vurma hissiyatına denk gelen zaman)
+        yield return new WaitForSeconds(attackHitDelay);
+        
+        // Animasyon eventi kullanmadan hasarı doğrudan script içinden vuruyoruz
+        TriggerAttackHit(randomAttack);
+
+        // Animasyonun bitişi için geri kalan süreyi bekle
+        float remainingTime = Mathf.Max(0, attackAnimationDuration - attackHitDelay);
+        yield return new WaitForSeconds(remainingTime);
 
         isAttacking = false;
         if (modelAnimator != null)
         {
             modelAnimator.SetInteger("AttackType", 0);
         }
+    }
+
+    IEnumerator ThrowKnifeRoutine()
+    {
+        isAttacking = true;
+        StopMoving();
+
+        if (modelAnimator != null)
+        {
+            // Tesla'nın atış animasyonunu tetikle
+            modelAnimator.SetTrigger("ThrowObject");
+        }
+
+        lastRangedAttackTime = Time.time;
+
+        // Fırlatma anına kadar bekle (Throw Delay süresi)
+        yield return new WaitForSeconds(throwDelay);
+
+        InstantiateKnife();
+
+        // Animasyonun bitmesini bekle
+        float remainingTime = Mathf.Max(0, throwAnimationDuration - throwDelay);
+        yield return new WaitForSeconds(remainingTime);
+
+        isAttacking = false;
+    }
+
+    public void InstantiateKnife()
+    {
+        if (throwPoint == null) { Debug.LogError("TeslaAI: throwPoint is NULL! Lütfen Inspector'dan Throw Point atayın."); return; }
+        if (electricityPrefab == null) { Debug.LogError("TeslaAI: electricityPrefab atanmamış! Lütfen Inspector'dan elektrik prefab'ini atayın."); return; }
+
+        // Z eksenini karakterin Z'sine sabitliyoruz (3D model derinlik sorunu için)
+        Vector3 spawnPos = throwPoint.position;
+        spawnPos.z = transform.position.z;
+
+        // Player'ın tam konumuna doğru fırlatması için yön hesapla
+        Vector2 shootDir = (player.position - throwPoint.position).normalized;
+
+        // Rotasyonu hesapla (transform.right bu açıya bakacak)
+        float angle = Mathf.Atan2(shootDir.y, shootDir.x) * Mathf.Rad2Deg;
+        Quaternion rotation = Quaternion.Euler(0, 0, angle);
+
+        GameObject spawned = Instantiate(electricityPrefab, spawnPos, rotation);
+        Debug.Log("Tesla elektrik fırlattı! Yön: " + shootDir + " Açı: " + angle);
     }
 
     IEnumerator BlockRoutine()
@@ -277,11 +367,18 @@ public class TeslaAI : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         GetComponent<Collider2D>().enabled = false;
 
+        StartCoroutine(DieRoutine());
+    }
+
+    IEnumerator DieRoutine()
+    {
+        yield return new WaitForSeconds(1.5f);
+
         this.enabled = false;
 
         if (GameManager.instance != null)
         {
-            GameManager.instance.EnemyDefeated(100, 200, 20); // Örnek ödül
+            GameManager.instance.EnemyDefeated(100, 200, 20);
         }
     }
 
@@ -311,30 +408,31 @@ public class TeslaAI : MonoBehaviour
 
     IEnumerator FlashRed()
     {
-        if (meshRenderers != null && meshRenderers.Length > 0)
+        if (isFlashing) yield break; // Üst üste binen flash'ları engelle
+        if (meshRenderers == null || meshRenderers.Length == 0) yield break;
+
+        isFlashing = true;
+
+        // MaterialPropertyBlock kullanarak orijinal materyallere dokunmadan renk değiştir
+        MaterialPropertyBlock propBlock = new MaterialPropertyBlock();
+        propBlock.SetColor("_Color", Color.red);
+
+        for (int i = 0; i < meshRenderers.Length; i++)
         {
-            // Orijinal renkleri kaydet ve kırmızı yap
-            Color[] originalColors = new Color[meshRenderers.Length];
-            for (int i = 0; i < meshRenderers.Length; i++)
-            {
-                if (meshRenderers[i] != null && meshRenderers[i].material != null)
-                {
-                    originalColors[i] = meshRenderers[i].material.color;
-                    meshRenderers[i].material.color = Color.red;
-                }
-            }
-
-            yield return new WaitForSeconds(0.1f);
-
-            // Eski renklerine döndür
-            for (int i = 0; i < meshRenderers.Length; i++)
-            {
-                if (meshRenderers[i] != null && meshRenderers[i].material != null)
-                {
-                    meshRenderers[i].material.color = originalColors[i];
-                }
-            }
+            if (meshRenderers[i] != null)
+                meshRenderers[i].SetPropertyBlock(propBlock);
         }
+
+        yield return new WaitForSeconds(0.1f);
+
+        // PropertyBlock'u temizle - orijinal materyal otomatik geri gelir
+        for (int i = 0; i < meshRenderers.Length; i++)
+        {
+            if (meshRenderers[i] != null)
+                meshRenderers[i].SetPropertyBlock(null);
+        }
+
+        isFlashing = false;
     }
 
     void OnDrawGizmosSelected()
@@ -353,3 +451,4 @@ public class TeslaAI : MonoBehaviour
         Time.timeScale = 1f;
     }
 }
+

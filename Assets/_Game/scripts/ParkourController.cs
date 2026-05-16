@@ -24,15 +24,18 @@ public class ParkourController : MonoBehaviour
 
     [Header("Chapter Geçişi")]
     public string bossFightSceneName = "Tutorial_Scene";
+    public SceneChanger sceneChanger;
 
     [Header("Slide")]
     public float slideYOffset = 0.8f;
 
-    [Header("BigJump & JumpOver")]
+    [Header("JumpOver")]
     public float jumpDelay = 0.3f;
-    public float bigJumpDelay = 0.3f;
-    public float bigJumpSpeedMultiplier = 0.4f;
     public float jumpOverSpeedMultiplier = 0.6f;
+
+    [Header("Stumble (Engele Çarpma)")]
+    public float stumbleDuration = 1.0f;
+    public float stumbleSpeedMultiplier = 0.3f;
 
     private Rigidbody rb;
     private Animator anim;
@@ -50,12 +53,8 @@ public class ParkourController : MonoBehaviour
 
     private bool inSlideZone = false;
     private bool inThrowZone = false;
-    private bool inBigJumpZone = false;
     private bool inJumpOverZone = false;
     private bool inJumping1Zone = false;
-    private bool inJumpingDownZone = false;
-    private bool inJumpingDown1Zone = false;
-    private bool inRunningJumpZone = false;
 
     private bool isIgnoringObstacles = false;
     private bool isStumbling = false;
@@ -119,9 +118,7 @@ public class ParkourController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
         {
-            if (inBigJumpZone) StartCoroutine(DoParkourDelayed("doBigJump", jumpForce * 1.5f, bigJumpSpeedMultiplier, bigJumpDelay, true));
-            else if (inJumpOverZone) StartCoroutine(DoParkourDelayed("doJumpOver", jumpForce, jumpOverSpeedMultiplier, jumpDelay, true));
-            else if (inRunningJumpZone) DoParkour("doRunningJump", jumpForce, true);
+            if (inJumpOverZone) StartCoroutine(DoParkourDelayed("doJumpOver", jumpForce, jumpOverSpeedMultiplier, jumpDelay, true));
             else if (inJumping1Zone) DoParkour("doJumping1", jumpForce, true);
             else if (inThrowZone) DoParkour("doThrow", 0f, true);
             else if (isGrounded) DoParkour("doRunningJump", jumpForce, false);
@@ -130,8 +127,6 @@ public class ParkourController : MonoBehaviour
         {
             if (inSlideZone) StartCoroutine(DoSlide());
             else if (isGrounded) StartCoroutine(DoRolling(false));
-            else if (inJumpingDownZone) DoParkour("doJumpingDown", 0f, true);
-            else if (inJumpingDown1Zone) DoParkour("doJumpingDown1", 0f, true);
         }
     }
 
@@ -139,11 +134,8 @@ public class ParkourController : MonoBehaviour
     {
         anim.ResetTrigger("doRunningJump");
         anim.ResetTrigger("doSlide");
-        anim.ResetTrigger("doBigJump");
         anim.ResetTrigger("doJumpOver");
         anim.ResetTrigger("doJumping1");
-        anim.ResetTrigger("doJumpingDown");
-        anim.ResetTrigger("doJumpingDown1");
         anim.ResetTrigger("doThrow");
         anim.ResetTrigger("doStumble");
         anim.ResetTrigger("doRolling");
@@ -240,47 +232,25 @@ public class ParkourController : MonoBehaviour
             isStumbling = false;
             yield break;
         }
-        
+
+        // Engelle çarpışmayı geçici olarak kapat (karakter içinden geçsin)
         int playerLayer = gameObject.layer;
         int objectLayer = LayerMask.NameToLayer("ObstacleLayer");
-        
-        // Fiziği kapat ve sadece engellerle çarpışmayı iptal et (Vector hissiyatı için)
-        rb.isKinematic = true;
         Physics.IgnoreLayerCollision(playerLayer, objectLayer, true);
 
-        // Engelin çapını alıp üstünden atlanacak mesafeyi belirliyoruz
-        float obstacleDepth = Mathf.Max(obstacleCollider.bounds.size.z, obstacleCollider.bounds.size.x);
-        float jumpDistance = obstacleDepth + 0.8f;
-        
-        Vector3 startPos = transform.position;
-        Vector3 endPos = startPos + (moveDirection.normalized * jumpDistance);
-        
-        float jumpHeight = obstacleCollider.bounds.size.y + 0.2f; 
-        
-        float duration = 0.6f;
-        float time = 0;
+        // Yavaşla
+        currentSpeed = runSpeed * stumbleSpeedMultiplier;
 
-        while (time < duration)
-        {
-            time += Time.deltaTime;
-            float progress = time / duration;
+        // Stumble animasyonu süresince bekle
+        yield return new WaitForSeconds(stumbleDuration);
 
-            float yOffset = Mathf.Sin(progress * Mathf.PI) * jumpHeight;
+        // Normal hıza geri dön
+        currentSpeed = runSpeed;
 
-            Vector3 currentPos = Vector3.Lerp(startPos, new Vector3(endPos.x, startPos.y, endPos.z), progress);
-            currentPos.y += yOffset;
-            
-            transform.position = currentPos;
-
-            yield return null;
-        }
-
-        transform.position = new Vector3(endPos.x, startPos.y + 0.1f, endPos.z);
-
-        rb.isKinematic = false;
+        // Engel çarpışmasını geri aç
         Physics.IgnoreLayerCollision(playerLayer, objectLayer, false);
-        
-        StartCoroutine(Cooldown(0.1f)); 
+
+        isDoingParkour = false;
         isStumbling = false;
     }
 
@@ -316,12 +286,8 @@ public class ParkourController : MonoBehaviour
 
         if (tag == "SlideZone" || tag == "slideZone") inSlideZone = true;
         else if (tag == "ThrowZone" || tag == "throwZone") inThrowZone = true;
-        else if (tag == "BigJumpZone" || tag == "bigJumpZone") inBigJumpZone = true;
         else if (tag == "JumpOverZone" || tag == "jumpOverZone") inJumpOverZone = true;
         else if (tag == "Jumping1Zone" || tag == "jumpingZone" || tag == "jumping1Zone") inJumping1Zone = true;
-        else if (tag == "JumpingDownZone" || tag == "jumpingDownZone") inJumpingDownZone = true;
-        else if (tag == "JumpingDown1Zone" || tag == "jumpingDown1Zone") inJumpingDown1Zone = true;
-        else if (tag == "RunningJumpZone" || tag == "runningJumpZone") inRunningJumpZone = true;
 
         if (tag == "Obstacle" && !isDoingParkour)
         {
@@ -349,12 +315,8 @@ public class ParkourController : MonoBehaviour
 
         if (tag == "SlideZone" || tag == "slideZone") inSlideZone = false;
         else if (tag == "ThrowZone" || tag == "throwZone") inThrowZone = false;
-        else if (tag == "BigJumpZone" || tag == "bigJumpZone") inBigJumpZone = false;
         else if (tag == "JumpOverZone" || tag == "jumpOverZone") inJumpOverZone = false;
         else if (tag == "Jumping1Zone" || tag == "jumpingZone" || tag == "jumping1Zone") inJumping1Zone = false;
-        else if (tag == "JumpingDownZone" || tag == "jumpingDownZone") inJumpingDownZone = false;
-        else if (tag == "JumpingDown1Zone" || tag == "jumpingDown1Zone") inJumpingDown1Zone = false;
-        else if (tag == "RunningJumpZone" || tag == "runningJumpZone") inRunningJumpZone = false;
     }
 
     private void Die()
@@ -424,8 +386,16 @@ public class ParkourController : MonoBehaviour
             Debug.Log($"Parkur bitti! Kalan can {currentHealth} ile BossFight'a geçiliyor...");
         }
 
-        // BossFight sahnesine geçiş (Unity Inspector hatasını önlemek için doğrudan yazıldı)
-        SceneManager.LoadScene("Tutorial_Scene");
+        // Loading ekranı ile sahne geçişi
+        if (sceneChanger != null)
+        {
+            sceneChanger.ChangeScene(bossFightSceneName);
+        }
+        else
+        {
+            Debug.LogWarning("SceneChanger atanmamış! Direkt sahne yükleniyor...");
+            SceneManager.LoadScene(bossFightSceneName);
+        }
     }
 
     private void OnDrawGizmosSelected()
