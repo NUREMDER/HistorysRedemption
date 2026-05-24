@@ -8,6 +8,10 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
     public enum LastMatchResult { None, Won, Fled, Lost }
     public string lastWonSceneName = "";
+    
+    [Header("Aktif Chapter Takibi")]
+    [Tooltip("Şu an hangi chapter oynanıyor (1-5). Lobiden butona basılınca ayarlanır.")]
+    public int playingChapterNumber = 0;
 
     [Header("Ekonomi ve İtibar")]
     public int playerGold = 0;
@@ -72,26 +76,28 @@ public class GameManager : MonoBehaviour
     if (fleeButton != null) fleeButton.SetActive(false);
 
     lastMatchStatus = LastMatchResult.Won;
-    string currentSceneName = SceneManager.GetActiveScene().name; // Mevcut sahne ismini al
-    lastWonSceneName = currentSceneName;
+    lastWonSceneName = SceneManager.GetActiveScene().name;
 
-    // --- HATAYI BULMAK İÇİN BU LOGLARI EKLE ---
-    Debug.Log("Şu anki Sahne: " + currentSceneName);
-    Debug.Log("Mevcut unlockedChapter: " + unlockedChapter);
+    // --- BÖLÜM KİLİDİ AÇMA (NUMARA BAZLI - BASİT VE SAĞLAM) ---
+    Debug.Log("=== DÜŞMAN YENİLDİ ===");
+    Debug.Log("playingChapterNumber = " + playingChapterNumber);
+    Debug.Log("unlockedChapter (önceki) = " + unlockedChapter);
 
-    // --- BÖLÜM KİLİDİ AÇMA MANTIĞI ---
-    // Chapter 1'in final sahnesi Tutorial_Scene olduğu için kontrolü buna göre yapıyoruz.
-    if (currentSceneName == "Tutorial_Scene" && unlockedChapter < 2)
+    if (playingChapterNumber > 0 && playingChapterNumber <= 5)
     {
-        unlockedChapter = 2;
-        Debug.Log("Chapter 2 Kilidi Açıldı!");
+        int nextChapter = playingChapterNumber + 1;
+        if (nextChapter <= 5 && unlockedChapter < nextChapter)
+        {
+            unlockedChapter = nextChapter;
+            Debug.Log(">>> Chapter " + nextChapter + " Kilidi Açıldı!");
+        }
     }
-    // Eğer Chapter 2'nin final sahne ismi farklıysa burayı ona göre güncelleyebilirsin.
-    else if (currentSceneName == "Chapter2" && unlockedChapter < 3)
+    else
     {
-        unlockedChapter = 3;
-        Debug.Log("Chapter 3 Kilidi Açıldı!");
+        Debug.LogWarning(">>> playingChapterNumber ayarlanmamış (" + playingChapterNumber + "). Kilit açılamadı.");
     }
+
+    Debug.Log("unlockedChapter (sonraki) = " + unlockedChapter);
     // ---------------------------------
 
     PlayerController player = GameObject.FindObjectOfType<PlayerController>();
@@ -104,7 +110,7 @@ public class GameManager : MonoBehaviour
     AddXP(xpReward);
     playerReputation += repReward;
 
-    SaveProgress(); // unlockedChapter bilgisini de kaydeder (Eğer SaveProgress'e eklediysen)
+    SaveProgress();
     StartCoroutine(ShowVictoryScreen());
 }
 
@@ -171,6 +177,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("LastMatchStatus", (int)lastMatchStatus);
         PlayerPrefs.SetInt("LastHealthDiff", lastMatchHealthDifference);
         PlayerPrefs.SetInt("UnlockedChapter", unlockedChapter);
+        PlayerPrefs.DeleteKey("CurrentChapter"); // Eski versiyon temizliği
         PlayerPrefs.Save();
     }
 
@@ -190,6 +197,7 @@ public class GameManager : MonoBehaviour
         lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
         lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
         unlockedChapter = PlayerPrefs.GetInt("UnlockedChapter", 1);
+        playingChapterNumber = 0; // Runtime değişken, PlayerPrefs'ten okunmaz
     }
 
     public void ResetAllStats()
@@ -205,13 +213,14 @@ public class GameManager : MonoBehaviour
         bonusDamage = 0;
         playerLevel = 1;
         xpForCurrentLevel = 0;
+        unlockedChapter = 1; // Chapter 1 her zaman açık kalır, diğerleri kilitlenir
         
         // Son maç durumu ve sağlık farkı gibi meta verileri sıfırlamayabilirsiniz ama isterseniz:
         // lastMatchStatus = LastMatchResult.None;
         // lastMatchHealthDifference = 0;
 
         SaveProgress();
-        Debug.Log("Tüm oyun ilerlemesi (XP, Reputation, Altın, Bıçak, Geliştirmeler) SIFIRLANDI!");
+        Debug.Log("Tüm oyun ilerlemesi (XP, Reputation, Altın, Bıçak, Geliştirmeler, Bölüm Kilitleri) SIFIRLANDI!");
     }
 
     IEnumerator ShowVictoryScreen()

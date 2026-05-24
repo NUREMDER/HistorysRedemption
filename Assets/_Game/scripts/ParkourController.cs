@@ -376,26 +376,18 @@ public class ParkourController : MonoBehaviour
         isDead = true; // Hareketi durdur
         rb.velocity = Vector3.zero;
 
-        // Kalan canı GameManager'a kaydet (BossFight'ta Player bu canla başlasın)
+        // Kalan canı GameManager'a kaydet (Dövüşte Player bu canla başlasın diye)
         if (GameManager.instance != null)
         {
-            // Parkurdan kalan canı geçici olarak saklıyoruz
             PlayerPrefs.SetInt("ParkourRemainingHealth", currentHealth);
             PlayerPrefs.SetInt("ParkourMaxHealth", maxHealth);
-            PlayerPrefs.Save();
-            Debug.Log($"Parkur bitti! Kalan can {currentHealth} ile BossFight'a geçiliyor...");
+            
+            GameManager.instance.SaveProgress();
+            Debug.Log($"Parkur bitti! Kalan can={currentHealth} kaydedildi. Geçişi EndZoneTrigger yönetecek.");
         }
 
-        // Loading ekranı ile sahne geçişi
-        if (sceneChanger != null)
-        {
-            sceneChanger.ChangeScene(bossFightSceneName);
-        }
-        else
-        {
-            Debug.LogWarning("SceneChanger atanmamış! Direkt sahne yükleniyor...");
-            SceneManager.LoadScene(bossFightSceneName);
-        }
+        // DİKKAT: Artık burada sahne YÜKLEMİYORUZ (SceneManager.LoadScene kaldırıldı).
+        // Sahne geçişi ve karakter değişimi işini o kutunun üzerindeki "EndZoneTrigger" scripti halledecek!
     }
 
     private void OnDrawGizmosSelected()

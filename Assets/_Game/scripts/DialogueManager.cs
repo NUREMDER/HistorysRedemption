@@ -204,8 +204,7 @@ public class DialogueManager : MonoBehaviour
             counter--;
         }
 
-        countdownText.text = "FIGHT!";
-        yield return new WaitForSecondsRealtime(0.7f);
+        // Geri sayım bitince yazıyı gizle (FIGHT yazısı ve bekletmesi kaldırıldı)
         countdownText.gameObject.SetActive(false);
 
         Time.timeScale = 1f;

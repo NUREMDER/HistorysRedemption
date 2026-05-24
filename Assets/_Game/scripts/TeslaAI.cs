@@ -20,25 +20,19 @@ public class TeslaAI : MonoBehaviour
     private float lastAttackTime = 0f;
 
     [Header("Animasyon Süreleri")]
-    public float attackHitDelay = 0.3f; // Vuruşun gerçekleşeceği an
     public float attackAnimationDuration = 1.0f; // Animasyonun toplam süresi
     public float throwDelay = 0.3f; // Fırlatmanın gerçekleşeceği an
     public float throwAnimationDuration = 1.0f; // Fırlatma animasyonunun toplam süresi
 
-    [Header("Menzilli Saldiri (Elektrik)")]
-    public bool enableRangedAttack = true;
-    public GameObject electricityPrefab; // Tesla'nin kendi elektrik prefab'i (TeslaProjectile scripti olan)
-    public Transform throwPoint;
-    public float rangedAttackRange = 8f;
-    public float minRangedDistance = 3f;
-    public float rangedAttackCooldown = 3f;
-    private float lastRangedAttackTime = 0f;
+
 
     [Header("Defans Ayarlari")]
     public int blockProtectionDamage = 2;
     public float blockChance = 40f;
     public float blockDuration = 2.0f;
     public float hurtDuration = 3f;
+    public float knockbackForce = 3f; // Hasar yediğinde geriye savrulma hızı
+    public float knockbackDelay = 1.0f; // Savrulmanın ne kadar süre sonra başlayacağı
 
     [Header("Hitbox Ayarlari")]
     public Transform highAttackPoint;
@@ -46,6 +40,10 @@ public class TeslaAI : MonoBehaviour
     public Transform lowAttackPoint;
     public float attackRange = 0.8f;
     public LayerMask playerLayer;
+
+    [Header("Menzilli Saldırı Ayarları (Yıldırım)")]
+    public GameObject lightningPrefab;
+    public Transform throwPoint;
 
     [Header("VFX & SFX Ayarlari")]
     public GameObject hitEffectPrefab;
@@ -57,7 +55,7 @@ public class TeslaAI : MonoBehaviour
     public Animator modelAnimator; // FBX içindeki Animator buraya atanacak
     public SkinnedMeshRenderer[] meshRenderers; // Hasar yediğinde kızarması için 3D meshler
 
-    [Header("Model Yön Ayarlari")]
+    [Header("Model Yön ve Ölçek Ayarlari")]
     [Tooltip("FBX modelin sağa baktığındaki Y rotasyon değeri (derece). Inspector'dan değil, koddan ayarlanır.")]
     public float modelRotationOffset = -90f;
 
@@ -95,9 +93,21 @@ public class TeslaAI : MonoBehaviour
             if (p != null) player = p.transform;
         }
 
-        // Sahne rotasyonunu kaydet ve flip için kullan (Quaternion = gimbal lock yok)
-        rightFacingRotation = transform.rotation;
-        leftFacingRotation = transform.rotation * Quaternion.Euler(0f, 180f, 0f);
+        // modelRotationOffset'i kullanarak sağ ve sol yön rotasyonlarını (Y ekseninde) hesapla
+        rightFacingRotation = Quaternion.Euler(0f, modelRotationOffset, 0f);
+        leftFacingRotation = Quaternion.Euler(0f, modelRotationOffset + 180f, 0f);
+
+        // Oyun başlar başlamaz player'ın nerede olduğunu bulup doğru yöne dönmesi için
+        if (player != null)
+        {
+            isFacingRight = player.position.x > transform.position.x;
+        }
+
+        // Başlangıç rotasyonunu SADECE 3D MODEL için ayarla (Fiziği bozmamak için)
+        if (modelAnimator != null)
+        {
+            modelAnimator.transform.localRotation = isFacingRight ? rightFacingRotation : leftFacingRotation;
+        }
     }
 
     void Update()
@@ -106,7 +116,6 @@ public class TeslaAI : MonoBehaviour
         if (isHurt)
         {
             FacePlayer(); // Hasar yerken de player'a bak
-            StopMoving();
             return;
         }
 
@@ -120,16 +129,6 @@ public class TeslaAI : MonoBehaviour
             {
                 StopMoving();
                 return;
-            }
-
-            // Menzilli Saldırı Kontrolü
-            if (enableRangedAttack && distanceToPlayer > minRangedDistance && distanceToPlayer < rangedAttackRange && !isAttacking)
-            {
-                if (Time.time >= lastRangedAttackTime + rangedAttackCooldown)
-                {
-                    StartCoroutine(ThrowKnifeRoutine());
-                    return; // Eğer fırlatıyorsa yürümeye çalışmasın
-                }
             }
 
             if (distanceToPlayer > stopDistance && !isAttacking)
@@ -187,8 +186,11 @@ public class TeslaAI : MonoBehaviour
     void Flip()
     {
         isFacingRight = !isFacingRight;
-        // Quaternion ile flip (gimbal lock olmaz, X ve Z asla bozulmaz)
-        transform.rotation = isFacingRight ? rightFacingRotation : leftFacingRotation;
+        // Sadece 3D modelin yönünü çevir
+        if (modelAnimator != null)
+        {
+            modelAnimator.transform.localRotation = isFacingRight ? rightFacingRotation : leftFacingRotation;
+        }
     }
 
     IEnumerator AttackRoutine()
@@ -198,25 +200,39 @@ public class TeslaAI : MonoBehaviour
 
         if (audioSource != null && attackSound != null) audioSource.PlayOneShot(attackSound);
 
-        int randomAttack = Random.Range(0, 3);
+        // 0 (yumruk), 1 (tekme), 2 (yıldırım) seçecek
+        int randomAttack = Random.Range(0, 3); 
 
         if (modelAnimator != null)
         {
-            modelAnimator.SetInteger("AttackType", randomAttack);
-            modelAnimator.SetTrigger("AttackTrigger");
+            if (randomAttack == 2)
+            {
+                // Senin Animator'da zaten hazır olan fırlatma Trigger'ını kullanıyoruz!
+                modelAnimator.SetTrigger("ThrowObject");
+            }
+            else
+            {
+                // Yumruk (0) ve Tekme (1) için eski sistem
+                modelAnimator.SetInteger("AttackType", randomAttack);
+                modelAnimator.SetTrigger("AttackTrigger");
+            }
         }
 
         lastAttackTime = Time.time;
 
-        // Vuruş anı (Animasyonun tam vurma hissiyatına denk gelen zaman)
-        yield return new WaitForSeconds(attackHitDelay);
-        
-        // Animasyon eventi kullanmadan hasarı doğrudan script içinden vuruyoruz
-        TriggerAttackHit(randomAttack);
+        // Animation Event olmadan kod ile hasar vurma zamanlaması
+        if (randomAttack == 2)
+        {
+            // Yıldırım için fırlatma gecikmesi
+            StartCoroutine(PerformThrow());
+        }
+        else
+        {
+            // Yumruk/Tekme için hasar verme gecikmesi (0.5 saniye)
+            StartCoroutine(PerformHit(randomAttack));
+        }
 
-        // Animasyonun bitişi için geri kalan süreyi bekle
-        float remainingTime = Mathf.Max(0, attackAnimationDuration - attackHitDelay);
-        yield return new WaitForSeconds(remainingTime);
+        yield return new WaitForSeconds(attackAnimationDuration);
 
         isAttacking = false;
         if (modelAnimator != null)
@@ -225,50 +241,7 @@ public class TeslaAI : MonoBehaviour
         }
     }
 
-    IEnumerator ThrowKnifeRoutine()
-    {
-        isAttacking = true;
-        StopMoving();
 
-        if (modelAnimator != null)
-        {
-            // Tesla'nın atış animasyonunu tetikle
-            modelAnimator.SetTrigger("ThrowObject");
-        }
-
-        lastRangedAttackTime = Time.time;
-
-        // Fırlatma anına kadar bekle (Throw Delay süresi)
-        yield return new WaitForSeconds(throwDelay);
-
-        InstantiateKnife();
-
-        // Animasyonun bitmesini bekle
-        float remainingTime = Mathf.Max(0, throwAnimationDuration - throwDelay);
-        yield return new WaitForSeconds(remainingTime);
-
-        isAttacking = false;
-    }
-
-    public void InstantiateKnife()
-    {
-        if (throwPoint == null) { Debug.LogError("TeslaAI: throwPoint is NULL! Lütfen Inspector'dan Throw Point atayın."); return; }
-        if (electricityPrefab == null) { Debug.LogError("TeslaAI: electricityPrefab atanmamış! Lütfen Inspector'dan elektrik prefab'ini atayın."); return; }
-
-        // Z eksenini karakterin Z'sine sabitliyoruz (3D model derinlik sorunu için)
-        Vector3 spawnPos = throwPoint.position;
-        spawnPos.z = transform.position.z;
-
-        // Player'ın tam konumuna doğru fırlatması için yön hesapla
-        Vector2 shootDir = (player.position - throwPoint.position).normalized;
-
-        // Rotasyonu hesapla (transform.right bu açıya bakacak)
-        float angle = Mathf.Atan2(shootDir.y, shootDir.x) * Mathf.Rad2Deg;
-        Quaternion rotation = Quaternion.Euler(0, 0, angle);
-
-        GameObject spawned = Instantiate(electricityPrefab, spawnPos, rotation);
-        Debug.Log("Tesla elektrik fırlattı! Yön: " + shootDir + " Açı: " + angle);
-    }
 
     IEnumerator BlockRoutine()
     {
@@ -282,10 +255,14 @@ public class TeslaAI : MonoBehaviour
         if (modelAnimator != null) modelAnimator.SetBool("IsBlocking", false);
     }
 
-    public void TriggerAttackHit(int pointIndex)
+    IEnumerator PerformHit(int pointIndex)
     {
-        Transform selectedPoint = null;
+        // Vuruşun hedefe ulaşması için yarım saniye bekle
+        yield return new WaitForSeconds(0.5f);
 
+        if (isDead || isHurt) yield break; // Eğer o sırada hasar yemişse veya ölmüşse vurma iptal
+
+        Transform selectedPoint = null;
         switch (pointIndex)
         {
             case 0: selectedPoint = lowAttackPoint; break;
@@ -294,9 +271,15 @@ public class TeslaAI : MonoBehaviour
             default: selectedPoint = midAttackPoint; break;
         }
 
-        if (selectedPoint == null) return;
+        if (selectedPoint == null) yield break;
 
-        Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(selectedPoint.position, attackRange, playerLayer);
+        float direction = isFacingRight ? 1f : -1f;
+        float offsetX = Mathf.Abs(selectedPoint.position.x - transform.position.x);
+        if (offsetX < 0.1f) offsetX = 1.0f; 
+
+        Vector2 hitPosition = new Vector2(transform.position.x + (direction * offsetX), selectedPoint.position.y);
+
+        Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(hitPosition, attackRange, playerLayer);
         bool hasHit = false;
 
         foreach (Collider2D p in hitPlayer)
@@ -312,6 +295,26 @@ public class TeslaAI : MonoBehaviour
         if (hasHit)
         {
             StartCoroutine(HitStopRoutine(0.05f));
+        }
+    }
+
+    IEnumerator PerformThrow()
+    {
+        yield return new WaitForSeconds(throwDelay);
+
+        if (isDead || isHurt) yield break;
+
+        if (lightningPrefab != null && player != null)
+        {
+            // Senin isteğin üzerine ThrowPoint'i tamamen iptal ettik!
+            // Artık elektriği tam o saniyede Player'ın bulunduğu yerin gökyüzünden (yüksekten) indiriyoruz.
+            // X ekseni Player'ın X'i, Y ekseni ise Player'ın 10 birim yukarısı (gökyüzü)
+            Vector2 spawnPos = new Vector2(player.position.x, player.position.y + 10f);
+            
+            // Yıldırımın tam aşağı (dümdüz) düşmesi için Z ekseninde -90 derece çeviriyoruz (Sağa doğru olan prefab aşağı doğru baksın diye)
+            Quaternion spawnRot = Quaternion.Euler(0, 0, -90);
+            
+            Instantiate(lightningPrefab, spawnPos, spawnRot);
         }
     }
 
@@ -331,8 +334,10 @@ public class TeslaAI : MonoBehaviour
             isAttacking = false;
             if (modelAnimator != null) modelAnimator.SetTrigger("Hurt");
             
+            float knockbackDir = player.position.x > transform.position.x ? -1f : 1f;
+
             if (hurtCoroutine != null) StopCoroutine(hurtCoroutine);
-            hurtCoroutine = StartCoroutine(HurtStunRoutine());
+            hurtCoroutine = StartCoroutine(HurtStunRoutine(knockbackDir));
             
             if (audioSource != null && hitSound != null) audioSource.PlayOneShot(hitSound);
 
@@ -363,6 +368,7 @@ public class TeslaAI : MonoBehaviour
         StopAllCoroutines();
         if (modelAnimator != null) modelAnimator.SetTrigger("Die");
 
+        // Fiziği tamamen kapatıyoruz ki ceset itilmesin veya takılmasın
         rb.velocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
         GetComponent<Collider2D>().enabled = false;
@@ -372,6 +378,22 @@ public class TeslaAI : MonoBehaviour
 
     IEnumerator DieRoutine()
     {
+        // 3D modelin kendi pozisyonunu aşağı indiriyoruz ki havada asılı kalmasın
+        float dropDuration = 1.0f;
+        float elapsed = 0f;
+        Vector3 startPos = transform.position;
+        Vector3 endPos = startPos - new Vector3(0f, 1.8f, 0f); // 1.8 birim aşağı çek
+
+        while (elapsed < dropDuration)
+        {
+            if (this != null) 
+            {
+                transform.position = Vector3.Lerp(startPos, endPos, elapsed / dropDuration);
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
         yield return new WaitForSeconds(1.5f);
 
         this.enabled = false;
@@ -382,17 +404,31 @@ public class TeslaAI : MonoBehaviour
         }
     }
 
-    IEnumerator HurtStunRoutine()
+    IEnumerator HurtStunRoutine(float knockbackDir)
     {
         isHurt = true;
         isAttacking = false;
-        StopMoving();
         
         float timer = 0f;
+        bool knocked = false;
+
         while (timer < hurtDuration)
         {
             if (isDead) yield break;
-            StopMoving();
+            
+            // Belirlenen süre geçince (1 sn) savrulmayı uygula
+            if (timer >= knockbackDelay && !knocked)
+            {
+                rb.velocity = new Vector2(knockbackDir * knockbackForce, rb.velocity.y);
+                knocked = true;
+            }
+
+            // Savrulduktan sonra sürtünme etkisiyle durdur
+            if (knocked)
+            {
+                rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, Time.deltaTime * 5f), rb.velocity.y);
+            }
+
             timer += Time.deltaTime;
             yield return null;
         }
@@ -440,8 +476,18 @@ public class TeslaAI : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
+        // Kırmızı vuruş çemberini Inspector'daki Pos_Mid'e göre çizdiriyoruz
         Gizmos.color = Color.red;
-        if (midAttackPoint != null) Gizmos.DrawWireSphere(midAttackPoint.position, attackRange);
+        if (midAttackPoint != null)
+        {
+            // Oyun başlamadan da (isFacingRight = true) pozisyonu görebilmen için
+            float direction = Application.isPlaying ? (isFacingRight ? 1f : -1f) : 1f;
+            float offsetX = Mathf.Abs(midAttackPoint.position.x - transform.position.x);
+            if (offsetX < 0.1f) offsetX = 1.0f;
+            
+            Vector2 hitPos = new Vector2(transform.position.x + (direction * offsetX), midAttackPoint.position.y);
+            Gizmos.DrawWireSphere(hitPos, attackRange);
+        }
     }
 
     IEnumerator HitStopRoutine(float duration)

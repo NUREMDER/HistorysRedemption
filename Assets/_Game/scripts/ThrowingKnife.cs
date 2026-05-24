@@ -60,10 +60,11 @@ public class ThrowingKnife : MonoBehaviour
             // Kendi karakterimize çarpmasını engelle
             if (hitInfo.CompareTag("Player")) return;
 
-            // 4. "EnemyAI" bileşeni, dokunulan objede VEYA onun en üst (Parent) objesinde var mı kontrol et
+            // 4. "EnemyAI" veya "TeslaAI" bileşeni var mı kontrol et
             EnemyAI enemy = hitInfo.GetComponentInParent<EnemyAI>();
+            TeslaAI teslaEnemy = hitInfo.GetComponentInParent<TeslaAI>();
             
-            if (enemy != null)
+            if (enemy != null || teslaEnemy != null)
             {
                 int totalDamage = damage;
                 if (GameManager.instance != null)
@@ -71,8 +72,17 @@ public class ThrowingKnife : MonoBehaviour
                     totalDamage += GameManager.instance.bonusDamage;
                 }
                 
-                enemy.TakeDamage(totalDamage);
-                Debug.Log("Bıçak düşmanı vurdu: " + enemy.gameObject.name);
+                if (enemy != null)
+                {
+                    enemy.TakeDamage(totalDamage);
+                    Debug.Log("Bıçak düşmanı vurdu: " + enemy.gameObject.name);
+                }
+                else if (teslaEnemy != null)
+                {
+                    teslaEnemy.TakeDamage(totalDamage);
+                    Debug.Log("Bıçak Tesla'yı vurdu: " + teslaEnemy.gameObject.name);
+                }
+
                 Destroy(gameObject); // Düşmana vurduktan sonra yok ol
             }
             else

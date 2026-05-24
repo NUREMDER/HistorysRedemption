@@ -19,8 +19,8 @@ public class TeslaProjectile : MonoBehaviour
         if (rb != null)
         {
             rb.gravityScale = 0f;
-            // transform.right zaten TeslaAI tarafindan oyuncuya dogru ayarlanmis olacak
-            rb.velocity = transform.right * speed;
+            // Artık yıldırım direkt gökten aşağı düşeceği için yönü her zaman aşağı (Vector2.down) olarak sabitliyoruz.
+            rb.velocity = Vector2.down * speed;
         }
 
         Destroy(gameObject, lifetime);

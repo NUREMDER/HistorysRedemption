@@ -9,51 +9,106 @@ public class LobbyManager : MonoBehaviour
     public GameObject marketPanel; 
 
     [Header("Bölüm Seçim Butonları")]
-    public Button[] chapterButtons; // Ch1, Ch2, Ch3 butonlarını sırayla sürükle
+    [Tooltip("Level1Button, Level2Button, Level3Button, Level4Button sırasıyla sürükle")]
+    public Button[] chapterButtons; // 4 buton: index 0=Ch1, 1=Ch2, 2=Ch3, 3=Ch4
+
+    [Header("Kilitli Buton Görünümü")]
+    [Tooltip("Kilitli butonların şeffaflık değeri (0=tamamen görünmez, 1=tam görünür)")]
+    [Range(0f, 1f)]
+    public float lockedAlpha = 0.3f;
 
     [Header("XP & Level UI")]
-    public Image xpBarFill;              // Filled Image — XP bar doluluk göstergesi
-    public TextMeshProUGUI levelText;    // "Level 3" gibi metin
-    public TextMeshProUGUI xpText;       // XP sayısal değeri (opsiyonel)
+    public Image xpBarFill;
+    public TextMeshProUGUI levelText;
+    public TextMeshProUGUI xpText;
 
     [Header("Reputation UI")]
-    public RectTransform repNeedle;      // İbre — sola/sağa kayan RectTransform
-    public TextMeshProUGUI repText;      // Reputation sayısal değeri
+    public RectTransform repNeedle;
+    public TextMeshProUGUI repText;
     [Tooltip("İbrenin ortadan en sağa/sola gidebileceği maksimum piksel mesafesi")]
     public float repNeedleMaxOffset = 150f;
     [Tooltip("Barın kapladığı toplam reputation aralığı (-maxRep ile +maxRep)")]
     public int maxReputation = 100;
 
+    // Sahne isimleri — buton index'ine göre eşleşir
+    private readonly string[] chapterSceneNames = { "Chapter1", "Chapter2", "Chapter3", "Chapter4" };
+
     void Start()
     {
-        UpdateLobbyUI(); // Lobi açıldığında değerleri yazdır
-        CheckChapterLocks(); // Bölüm kilitlerini kontrol et
+        SetupChapterButtons();
+        UpdateLobbyUI();
+        CheckChapterLocks();
     }
 
-    public void CheckChapterLocks()
-{
-    if (GameManager.instance == null) { Debug.LogError("LOBBY: GameManager bulunamadı!"); return; }
-    if (chapterButtons == null || chapterButtons.Length == 0) { Debug.LogError("LOBBY: Butonlar diziye eklenmemiş!"); return; }
 
-    int unlocked = GameManager.instance.unlockedChapter;
-    Debug.Log("LOBBY KONTROL: Şu an açılmış olan bölüm sayısı: " + unlocked);
 
-    for (int i = 0; i < chapterButtons.Length; i++)
+    /// <summary>
+    /// Her butona runtime listener olarak doğru Chapter sahnesini yükleyen onClick ekler.
+    /// Inspector'daki mevcut onClick eventlerini (ör. ses efekti) BOZMAZ, yanına eklenir.
+    /// </summary>
+    private void SetupChapterButtons()
     {
-        if (chapterButtons[i] == null) { Debug.LogError("LOBBY: " + i + ". indeksteki buton boş!"); continue; }
+        if (chapterButtons == null || chapterButtons.Length == 0)
+        {
+            Debug.LogError("LOBBY SETUP: chapterButtons dizisi boş veya atanmamış!");
+            return;
+        }
 
-        // Mantığı basit tutalım
-        bool sartsaglandi = (i + 1 <= unlocked);
-        chapterButtons[i].interactable = sartsaglandi;
+        for (int i = 0; i < chapterButtons.Length; i++)
+        {
+            if (chapterButtons[i] == null)
+            {
+                Debug.LogError("LOBBY SETUP: chapterButtons[" + i + "] null! Inspector'da buton atanmamış.");
+                continue;
+            }
 
-        // Görsel olarak da emin olalım: Kilitliyse butonu biraz şeffaf yap
-        Color c = chapterButtons[i].image.color;
-        c.a = sartsaglandi ? 1f : 0.3f; 
-        chapterButtons[i].image.color = c;
+            // Closure için yerel değişkenler
+            int chapterNum = i + 1; // 1, 2, 3, 4, 5
+            string sceneName = (i < chapterSceneNames.Length) 
+                ? chapterSceneNames[i] 
+                : "Chapter" + chapterNum;
 
-        Debug.Log(chapterButtons[i].name + " butonu aktif mi? " + sartsaglandi);
+            // Inspector onClick'leri silmeden, YANINA runtime listener ekle
+            chapterButtons[i].onClick.AddListener(() => LoadChapter(sceneName, chapterNum));
+
+            Debug.Log("LOBBY SETUP: " + chapterButtons[i].name + " → " + sceneName + " (Chapter " + chapterNum + ") atandı ✓");
+        }
     }
-}
+
+    /// <summary>
+    /// Bölüm kilit durumlarını kontrol eder.
+    /// Chapter 1 her zaman açıktır.
+    /// </summary>
+    public void CheckChapterLocks()
+    {
+        if (GameManager.instance == null) { Debug.LogError("LOBBY: GameManager bulunamadı!"); return; }
+        if (chapterButtons == null || chapterButtons.Length == 0) { Debug.LogError("LOBBY: Butonlar diziye eklenmemiş!"); return; }
+
+        int unlocked = GameManager.instance.unlockedChapter;
+        Debug.Log("LOBBY KONTROL: unlockedChapter = " + unlocked);
+
+        for (int i = 0; i < chapterButtons.Length; i++)
+        {
+            if (chapterButtons[i] == null) { Debug.LogError("LOBBY: " + i + ". indeksteki buton boş!"); continue; }
+
+            bool isUnlocked = (i + 1 <= unlocked);
+            
+            // Tıklama kontrolü sadece Button.interactable ile
+            chapterButtons[i].interactable = isUnlocked;
+
+            // CanvasGroup sadece görsel alpha için — tıklamaya DOKUNMUYOR
+            CanvasGroup cg = chapterButtons[i].GetComponent<CanvasGroup>();
+            if (cg == null)
+            {
+                cg = chapterButtons[i].gameObject.AddComponent<CanvasGroup>();
+            }
+            cg.alpha = isUnlocked ? 1f : lockedAlpha;
+            cg.blocksRaycasts = true;  // Her zaman true
+            cg.interactable = true;    // Her zaman true
+
+            Debug.Log(chapterButtons[i].name + " → " + (isUnlocked ? "AÇIK ✓" : "KİLİTLİ ✗"));
+        }
+    }
 
     public void UpdateLobbyUI()
     {
@@ -61,7 +116,6 @@ public class LobbyManager : MonoBehaviour
 
         GameManager gm = GameManager.instance;
 
-        // ─── XP Bar ───
         if (xpBarFill != null)
         {
             float fill = (float)gm.xpForCurrentLevel / gm.XpToNextLevel;
@@ -74,12 +128,9 @@ public class LobbyManager : MonoBehaviour
         if (xpText != null)
             xpText.text = gm.xpForCurrentLevel + " / " + gm.XpToNextLevel + " XP";
 
-        // ─── Reputation İbre ───
         if (repNeedle != null)
         {
-            // Reputation'ı -maxRep..+maxRep aralığında normalize et (-1..+1)
             float normalized = Mathf.Clamp((float)gm.playerReputation / maxReputation, -1f, 1f);
-            // İbreyi ortadan sola veya sağa kaydır
             Vector2 pos = repNeedle.anchoredPosition;
             pos.x = normalized * repNeedleMaxOffset;
             repNeedle.anchoredPosition = pos;
@@ -102,16 +153,33 @@ public class LobbyManager : MonoBehaviour
         if (marketPanel != null) 
         {
             marketPanel.SetActive(false);
-            UpdateLobbyUI(); // Marketten çıkınca harcanan XP'leri lobide güncelle
+            UpdateLobbyUI();
         }
     }
 
-    public void LoadChapter(string sceneName)
+    /// <summary>
+    /// Sahneyi yükler ve hangi chapter oynandığını GameManager'a bildirir.
+    /// </summary>
+    public void LoadChapter(string sceneName, int chapterNumber)
     {
-        Debug.Log(sceneName + " sahnesine gidiliyor...");
-        Time.timeScale = 1f; // Oyunun donuk kalmadığından emin olalım
+        Debug.Log(">>> SAHNE YÜKLENİYOR: " + sceneName + " (Chapter " + chapterNumber + ")");
+        
+        // GameManager'a hangi chapter'ı oynadığımızı kaydet
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.playingChapterNumber = chapterNumber;
+            Debug.Log(">>> playingChapterNumber = " + chapterNumber + " ayarlandı");
+        }
+        
+        Time.timeScale = 1f;
         SceneManager.LoadScene(sceneName);
     }
+
+    // Inspector OnClick için - her biri doğrudan chapter numarası ile çağırır
+    public void StartChapter1() { LoadChapter("Chapter1", 1); }
+    public void StartChapter2() { LoadChapter("Chapter2", 2); }
+    public void StartChapter3() { LoadChapter("Chapter3", 3); }
+    public void StartChapter4() { LoadChapter("Chapter4", 4); }
 
     public void GoToMainMenu()
     {
@@ -123,12 +191,5 @@ public class LobbyManager : MonoBehaviour
     {
         Debug.Log("OYUNDAN ÇIKILIYOR...");
         Application.Quit();
-    }
-    public void StartChapter2()
-    {
-        SceneManager.LoadScene(6);
-    }
-    public void StartChapter3(){
-        SceneManager.LoadScene(8);
     }
 }
