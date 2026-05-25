@@ -61,6 +61,7 @@ public class DialogueManager : MonoBehaviour
 
         activePlayer = null;
         activeBoss = null;
+        activeTeslaBoss = null;
         activeParkourController = parkourController;
 
         if (activeParkourController != null)
@@ -141,7 +142,8 @@ public class DialogueManager : MonoBehaviour
         nextButton.SetActive(false);
 
         // --- COUNTDOWN MANTIĞI ---
-        if (bossHealthBar != null)
+        // Sadece sahnede aktif bir boss (EnemyAI veya TeslaAI) varsa geri sayımı ve can barını başlatır.
+        if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
         {
             StartCoroutine(CountdownRoutine());
         }
@@ -153,16 +155,20 @@ public class DialogueManager : MonoBehaviour
             }
 
             // --- CAN BARINI AKTİF ETME (Garantili ve Şartsız Yöntem) ---
-            // Boss'un aktif olup olmamasından bağımsız olarak, diyalog bittiği an bu barı açıyoruz.
-            if (bossHealthBar != null)
+            // HATA ÇÖZÜMÜ: Sadece ve sadece sahnede gerçek bir boss varsa diyalog bitişi bu barı açsın!
+            // Koşu başında oyuncu kendi kendine konuşurken artık buraya takılmayacak ve bar kapalı kalacak.
+            if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
             {
                 bossHealthBar.SetActive(true); 
                 Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
             }
             else
             {
-                // Eğer hala görünmüyorsa Inspector'dan sürüklemeyi unutmuşsun demektir.
-                Debug.LogError("DİKKAT: bossHealthBar kutucuğu hala boş!");
+                // Eğer dövüş sahnesindeysek ve hala görünmüyorsa Inspector uyarısı versin, parkurda hata vermesin
+                if (activeBoss != null || activeTeslaBoss != null)
+                {
+                    Debug.LogError("DİKKAT: bossHealthBar kutucuğu hala boş!");
+                }
             }
 
             if (activeBoss != null)

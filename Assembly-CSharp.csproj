@@ -67,6 +67,7 @@
     <Compile Include="Assets/_Game/scripts/EnemyController.cs" />
     <Compile Include="Assets/_Game/scripts/GameManager.cs" />
     <Compile Include="Assets/_Game/scripts/ThrowingKnife.cs" />
+    <Compile Include="Assets/_Game/scripts/TeslaAI.cs" />
     <Compile Include="Assets/_Game/scripts/PauseManager.cs" />
     <Compile Include="Assets/_Game/scripts/ParkourController.cs" />
     <Compile Include="Assets/_Game/scripts/MarketManager.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Assets/_Game/scripts/MainMenuManager.cs" />
     <Compile Include="Assets/_Game/scripts/RotateLoading.cs" />
     <Compile Include="Assets/_Game/scripts/BackgroundMusic.cs" />
+    <Compile Include="Assets/_Game/scripts/TeslaProjectile.cs" />
     <Compile Include="Assets/_Game/scripts/SelfDestruct.cs" />
     <Compile Include="Assets/_Game/scripts/SceneChanger.cs" />
     <Compile Include="Assets/_Game/scripts/CameraTrigger.cs" />
