@@ -4945,6 +4945,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 35169e6d1acbbca4fb9e78de0aeef126, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 35169e6d1acbbca4fb9e78de0aeef126, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: c0b43d9a737adc141938a3946111f2a1, type: 2}
@@ -4996,6 +5000,7 @@ MonoBehaviour:
   speed: 20
   damage: 25
   lifetime: 2
+  isEnemyProjectile: 0
 --- !u!61 &8461578888841234380
 BoxCollider2D:
   m_ObjectHideFlags: 0

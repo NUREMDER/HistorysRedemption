@@ -118,26 +118,37 @@ public class LobbyManager : MonoBehaviour
 
         if (xpBarFill != null)
         {
-            float fill = (float)gm.xpForCurrentLevel / gm.XpToNextLevel;
-            xpBarFill.fillAmount = Mathf.Clamp01(fill);
+            // Sadece dolgu barını gizleyelim, parent'ı gizlersek xpText de kaybolabilir!
+            xpBarFill.gameObject.SetActive(false);
+            
+            // Eğer barın bir arka planı varsa (kardeş objesi vb.) ve siz onu Inspector'dan silmezseniz burada görünebilir.
+            // En temizi Inspector'dan sadece yazıları bırakıp bar görsellerini silmektir.
         }
 
         if (levelText != null)
-            levelText.text = "Level " + gm.playerLevel;
+        {
+            levelText.gameObject.SetActive(false);
+        }
 
         if (xpText != null)
-            xpText.text = gm.xpForCurrentLevel + " / " + gm.XpToNextLevel + " XP";
+        {
+            // Eğer daha önce parent gizlendiği için kapalı kaldıysa, parent'ı zorla açalım (güvenlik amaçlı)
+            if (xpText.transform.parent != null && !xpText.transform.parent.gameObject.activeSelf)
+                xpText.transform.parent.gameObject.SetActive(true);
+                
+            xpText.gameObject.SetActive(true);
+            xpText.text = "Experience: " + gm.playerXP;
+        }
 
         if (repNeedle != null)
         {
-            float normalized = Mathf.Clamp((float)gm.playerReputation / maxReputation, -1f, 1f);
-            Vector2 pos = repNeedle.anchoredPosition;
-            pos.x = normalized * repNeedleMaxOffset;
-            repNeedle.anchoredPosition = pos;
+            repNeedle.gameObject.SetActive(false);
         }
 
         if (repText != null)
-            repText.text = "İtibar: " + gm.playerReputation;
+        {
+            repText.text = "Reputation: " + gm.playerReputation;
+        }
     }
 
     public void OpenMarket()

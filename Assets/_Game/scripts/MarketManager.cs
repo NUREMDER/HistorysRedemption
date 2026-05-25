@@ -141,7 +141,7 @@ public class MarketManager : MonoBehaviour
             int dPrice = GetDiscountedPrice(damageUpgradePrice);
 
             if (xpText != null)
-                xpText.text = "XP: " + GameManager.instance.playerXP;
+                xpText.text = "Experience: " + GameManager.instance.playerXP;
 
             if (healthPriceText != null)
                 healthPriceText.text = "(+20 Max Health)";

@@ -4949,6 +4949,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 4930bb94ca493894399d7d0018b5d440, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 4930bb94ca493894399d7d0018b5d440, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: c0b43d9a737adc141938a3946111f2a1, type: 2}
@@ -5068,6 +5072,7 @@ MonoBehaviour:
   speed: 20
   damage: 10
   lifetime: 2
+  isEnemyProjectile: 0
 --- !u!96 &6260057000776364698
 TrailRenderer:
   serializedVersion: 3
