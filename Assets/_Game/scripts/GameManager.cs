@@ -256,7 +256,8 @@ public class GameManager : MonoBehaviour
     }
 
     public void ReturnToLobby()
-    {
+    {   
+        Debug.Log("Butona tıklandı!");
         if (IsProxy) { instance.ReturnToLobby(); return; }
 
         Debug.Log("Lobiye dönme tuşuna basıldı!");
