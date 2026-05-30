@@ -1,14 +1,14 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Sahne değişimi için şart
+using UnityEngine.SceneManagement; 
 using System.Collections;
 
 public class SceneChanger : MonoBehaviour
 {
-    [Header("Görsel Ayarlar")]
-    public GameObject loadingCanvas; // Dönen simgenin olduğu Canvas
-    public float waitTime = 3f;      // Loading ekranı kaç saniye gözükecek?
+    [Header("Visual Settings")]
+    public GameObject loadingCanvas; // The Canvas that contains the spinning loading icon
+    public float waitTime = 3f;      // How many seconds the loading screen will stay visible
 
-    // Bu fonksiyonu parkur bittiğinde veya bir butona basıldığında çağıracağız
+    // Call this function when the parkour ends or when a UI button is pressed
     public void ChangeScene(string targetSceneName)
     {
         StartCoroutine(LoadingProcess(targetSceneName));
@@ -16,16 +16,16 @@ public class SceneChanger : MonoBehaviour
 
     IEnumerator LoadingProcess(string sceneName)
     {
-        // 1. Loading ekranını aç (Dönen simge çalışmaya başlar)
+        //  Open the loading screen (the spinning icon starts rotating automatically)
         if (loadingCanvas != null)
         {
             loadingCanvas.SetActive(true);
         }
 
-        // 2. Belirlediğimiz süre kadar bekle (2 saniye)
+        // Wait for the specified duration 
         yield return new WaitForSeconds(waitTime);
 
-        // 3. Yeni sahneyi yükle
+        //  Load the target scene safely
         SceneManager.LoadScene(sceneName);
     }
 }

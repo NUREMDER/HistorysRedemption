@@ -9,7 +9,7 @@ public class BackgroundMusic : MonoBehaviour
 
     void Awake()
     {
-        // Eğer sahnede halihazırda çalan bir müzik objesi varsa yenisini yok et (Müziklerin üst üste binmesini engeller)
+        // prevents audios binding
         if (instance != null && instance != this)
         {
             Destroy(gameObject);
@@ -17,14 +17,14 @@ public class BackgroundMusic : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(gameObject); // Sahne değişse bile bu objenin silinmesini engeller
+        DontDestroyOnLoad(gameObject); // prevents this object from being destroyed when the scene changes.
 
         audioSource = GetComponent<AudioSource>();
     }
 
     void Start()
     {
-        // Oyun ilk açıldığında müziği başlat
+        //  plays audio when game starts
         if (!audioSource.isPlaying)
         {
             audioSource.Play();
@@ -43,7 +43,7 @@ public class BackgroundMusic : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Sadece Menü ve Lobi'de çalmaya devam etsin
+        // audio can play only in this scenes
         if (scene.name == "MainMenu" || scene.name == "Araf_Lobby")
         {
             if (!audioSource.isPlaying)
@@ -53,7 +53,7 @@ public class BackgroundMusic : MonoBehaviour
         }
         else
         {
-            // Parkur (ex1) veya Boss (Tutorial_Scene) sahnelerine geçilince müziği sustur
+            // stops audio in other scenes
             if (audioSource.isPlaying)
             {
                 audioSource.Stop();

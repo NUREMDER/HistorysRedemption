@@ -2,10 +2,9 @@ using UnityEngine;
 
 public class SelfDestruct : MonoBehaviour
 {
-    // Baþlar baþlamaz geri sayýmý baþlat
     void Start()
     {
-        // 1 saniye sonra bu objeyi oyundan sil
+        // Automatically destroy this object 1 second after it spawns to save memory
         Destroy(gameObject, 1.0f);
     }
 }

@@ -1,14 +1,9 @@
 using UnityEngine;
 
-/// <summary>
-/// Bu scripti her savaş sahnesindeki UI panellerinin parent objesine ekleyin.
-/// Sahne yüklendiğinde otomatik olarak GameManager'a panel referanslarını bağlar.
-/// Ayrıca butonların OnClick eventlerinde bu scriptin metodlarını kullanın —
-/// böylece DontDestroyOnLoad GameManager'a güvenli şekilde erişilir.
-/// </summary>
+//Automatically links battle UI panels and button events to the GameManager on scene load.
 public class BattleUIConnector : MonoBehaviour
 {
-    [Header("Savaş UI Panelleri")]
+    [Header("Battle UI Panels")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;
     public GameObject fleePanel;
@@ -18,7 +13,7 @@ public class BattleUIConnector : MonoBehaviour
     {
         if (GameManager.instance == null)
         {
-            Debug.LogWarning("BattleUIConnector: GameManager bulunamadı!");
+            Debug.LogWarning("BattleUIConnector: GameManager not found!");
             return;
         }
 
@@ -29,27 +24,26 @@ public class BattleUIConnector : MonoBehaviour
         gm.fleePanel = fleePanel;
         gm.fleeButton = fleeButton;
 
-        Debug.Log("BattleUIConnector: Paneller GameManager'a bağlandı ✓");
+        Debug.Log("BattleUIConnector: Panels connected to GameManager");
     }
 
-    // ─── Butonlar için Relay Metodları ───
-    // Panel butonlarının OnClick eventlerinde bu metodları kullanın.
+    // ─── BUTTON METHODS ───
 
-    /// <summary>Lobiye dön butonu</summary>
+    /// back to lobby button
     public void OnReturnToLobby()
     {
         if (GameManager.instance != null)
             GameManager.instance.ReturnToLobby();
     }
 
-    /// <summary>Ana menüye dön butonu</summary>
+    /// main menu button
     public void OnReturnToMainMenu()
     {
         if (GameManager.instance != null)
             GameManager.instance.ReturnToMainMenu();
     }
 
-    /// <summary>Savaştan kaç butonu</summary>
+    /// flee button
     public void OnFleeBattle()
     {
         if (GameManager.instance != null)

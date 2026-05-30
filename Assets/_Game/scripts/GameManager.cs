@@ -5,64 +5,66 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager instance;
+    public static GameManager instance; // Singleton instance of the GameManager
+
+    // Enumeration for keeping track of the last match outcome
     public enum LastMatchResult { None, Won, Fled, Lost }
-    public string lastWonSceneName = "";
+    public string lastWonSceneName = ""; //!!!!!
     
-    [Header("Aktif Chapter Takibi")]
-    [Tooltip("Şu an hangi chapter oynanıyor (1-5). Lobiden butona basılınca ayarlanır.")]
+    [Header("Active Chapter Tracking")]
     public int playingChapterNumber = 0;
 
-    [Header("Ekonomi ve İtibar")]
+    [Header("Economy and Reputation")]
     public int playerGold = 0;
     public int playerXP = 0;
     public int playerReputation = 0;
     public int playerKnives = 0;
-    public int unlockedKnifeLevel = 0; // 0=Kilitli, 1=Lv1, 2=Lv2, 3=Max
+    public int unlockedKnifeLevel = 0; // 0=Locked, 1=Lv1, 2=Lv2, 3=Max
 
-    [Header("Level Sistemi")]
+    [Header("Level System")]
     public int playerLevel = 1;
-    public int xpForCurrentLevel = 0;  // Mevcut level içindeki XP
+    public int xpForCurrentLevel = 0;  // XP accumulated in the current level
 
-    /// <summary>Mevcut level'i geçmek için gereken XP miktarı (Level 1→100, Level 2→200, ...)</summary>
+    // Property that calculates required XP for the next level (Level 1 = 100 XP, Level 2 = 200 XP, etc.)
     public int XpToNextLevel => 100 * playerLevel;
 
-    [Header("Kalc Gelitirmeler")]
+    [Header("Permanent Upgrades")]
     public int bonusMaxHealth = 0;
     public int bonusDamage = 0;
 
-    [Header("UI Panelleri")]
+    [Header("UI Panels")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;
     public GameObject fleePanel;
     public GameObject fleeButton;
 
-    [Header("Maç Hafızası")]
+    [Header("Match Memory")]
     public LastMatchResult lastMatchStatus = LastMatchResult.None;
-    public int lastMatchHealthDifference = 0;
+    public int lastMatchHealthDifference = 0; //!!!!!
 
-    [Header("Bölüm Kilitleri")]
-    public int unlockedChapter = 1; // Başlangıçta sadece Chapter 1 açık
+    [Header("Chapter Locks")]
+    public int unlockedChapter = 1; // Chapter 1 is unlocked by default
 
     void Awake()
     {
         if (instance == null)
         {
+            // If this is the first time the game runs, set this as the main instance
             instance = this;
             DontDestroyOnLoad(gameObject);
             LoadProgress();
         }
         else if (instance != this)
         {
-            // Sahne kopyası: UI panel referanslarını asıl instance'a aktar
+            // Scene duplicate: transfer the new UI panel references to the main instance
             instance.victoryPanel = this.victoryPanel;
             instance.defeatPanel = this.defeatPanel;
             instance.fleePanel = this.fleePanel;
             instance.fleeButton = this.fleeButton;
 
-            // GameObject'i YOK ETME — butonlar bu objeye bağlı.
-            // Sadece gereksiz mantığı engelle.
-            Debug.Log("GameManager proxy: UI panelleri asıl instance'a aktarıldı ✓");
+            // DO NOT destroy the GameObject because buttons are attached to this object.
+            // Just prevent duplicate logic from running.
+            Debug.Log("GameManager proxy: UI panels transferred to main instance ✓");
         }
     }
 
@@ -71,58 +73,71 @@ public class GameManager : MonoBehaviour
 
     public void EnemyDefeated(int goldReward, int xpReward, int repReward)
 {
-    if (IsProxy) { instance.EnemyDefeated(goldReward, xpReward, repReward); return; }
+    // If this is a proxy GameManager, forward the call to the main instance and exit
+    if (IsProxy) 
+    { 
+        instance.EnemyDefeated(goldReward, xpReward, repReward); 
+        return; 
+    }
 
-    if (fleeButton != null) fleeButton.SetActive(false);
+    // Hide the flee button since the match is over
+    if (fleeButton != null) 
+    {
+        fleeButton.SetActive(false);
+    }
 
+    // Update match history states
     lastMatchStatus = LastMatchResult.Won;
     lastWonSceneName = SceneManager.GetActiveScene().name;
 
-    // --- BÖLÜM KİLİDİ AÇMA (NUMARA BAZLI - BASİT VE SAĞLAM) ---
-    Debug.Log("=== DÜŞMAN YENİLDİ ===");
+    Debug.Log("=== ENEMY DEFEATED ===");
     Debug.Log("playingChapterNumber = " + playingChapterNumber);
-    Debug.Log("unlockedChapter (önceki) = " + unlockedChapter);
+    Debug.Log("unlockedChapter (before) = " + unlockedChapter);
 
+    // Check if the current playing chapter is valid to unlock the next one
     if (playingChapterNumber > 0 && playingChapterNumber <= 5)
     {
         int nextChapter = playingChapterNumber + 1;
+        // Unlock the next chapter if it is not already unlocked
         if (nextChapter <= 5 && unlockedChapter < nextChapter)
         {
             unlockedChapter = nextChapter;
-            Debug.Log(">>> Chapter " + nextChapter + " Kilidi Açıldı!");
+            Debug.Log(">>> Chapter " + nextChapter + " Unlocked!");
         }
     }
     else
     {
-        Debug.LogWarning(">>> playingChapterNumber ayarlanmamış (" + playingChapterNumber + "). Kilit açılamadı.");
+        Debug.LogWarning(">>> playingChapterNumber is not set (" + playingChapterNumber + "). Cannot unlock next chapter.");
     }
 
-    Debug.Log("unlockedChapter (sonraki) = " + unlockedChapter);
-    // ---------------------------------
+    Debug.Log("unlockedChapter (after) = " + unlockedChapter);
 
+    // Save player's health data for match memory
     PlayerController player = GameObject.FindObjectOfType<PlayerController>();
     if (player != null)
     {
         lastMatchHealthDifference = player.maxHealth; 
     }
 
+    // Add rewarded gold, experience points, and reputation
     playerGold += goldReward;
     AddXP(xpReward);
     playerReputation += repReward;
 
+    // Save player progress to PlayerPrefs and open victory screen
     SaveProgress();
     StartCoroutine(ShowVictoryScreen());
 }
-
     public void PlayerDefeated()
     {
+        // If proxy, forward to main instance and exit
         if (IsProxy) { instance.PlayerDefeated(); return; }
 
         if (fleeButton != null) fleeButton.SetActive(false);
 
         lastMatchStatus = LastMatchResult.Lost;
 
-        // Flee yapmadan CİDDEN YENİLİNCE tüm ilerleme sıfırlanır:
+        // Reset all player stats as a penalty for losing completely
         ResetAllStats();
 
         StartCoroutine(ShowDefeatScreen());
@@ -132,6 +147,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsProxy) { instance.ShowFleeOption(); return; }
 
+        // Enable the flee button if it is hidden
         if (fleeButton != null && !fleeButton.activeSelf)
         {
             fleeButton.SetActive(true);
@@ -144,26 +160,29 @@ public class GameManager : MonoBehaviour
 
         if (fleeButton != null) fleeButton.SetActive(false);
 
-        playerReputation -= 10; // Negatife düşebilir
+        // Decrease reputation points as a penalty for escaping
+        playerReputation -= 10; 
 
-        SaveProgress(); // Kaydet
+        // Save progress and show the flee panel
+        SaveProgress(); 
         if (fleePanel != null)
         {
             fleePanel.SetActive(true);
-            Time.timeScale = 0f;
+            Time.timeScale = 0f; // Pause the game
         }
         else
         {
-            Debug.LogWarning("FleePanel bulunamadı! Lobiye dönülüyor...");
+            Debug.LogWarning("FleePanel not found! Returning to lobby...");
             ReturnToLobby();
         }
     }
 
-    // --- Kayıt ve Yükleme Fonksiyonları ---
+    // --- Save and Load Functions ---
     public void SaveProgress()
     {
         if (IsProxy) { instance.SaveProgress(); return; }
 
+        // Save all player stats and game progression to local storage
         PlayerPrefs.SetInt("PlayerXP", playerXP);
         PlayerPrefs.SetInt("PlayerRep", playerReputation);
         PlayerPrefs.SetInt("PlayerGold", playerGold);
@@ -173,18 +192,19 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("BonusDamage", bonusDamage);
         PlayerPrefs.SetInt("PlayerLevel", playerLevel);
         PlayerPrefs.SetInt("XPForCurrentLevel", xpForCurrentLevel);
-        //son maç durumu oyun kapatıldığında da hatırlansın diye 
         PlayerPrefs.SetInt("LastMatchStatus", (int)lastMatchStatus);
         PlayerPrefs.SetInt("LastHealthDiff", lastMatchHealthDifference);
         PlayerPrefs.SetInt("UnlockedChapter", unlockedChapter);
-        PlayerPrefs.DeleteKey("CurrentChapter"); // Eski versiyon temizliği
-        PlayerPrefs.Save();
+        
+        PlayerPrefs.DeleteKey("CurrentChapter"); // Clean up old version keys
+        PlayerPrefs.Save(); // Force write changes to disk
     }
 
     public void LoadProgress()
     {
         if (IsProxy) { instance.LoadProgress(); return; }
 
+        // Load all saved player data from local storage on startup
         playerXP = PlayerPrefs.GetInt("PlayerXP", 0);
         playerReputation = PlayerPrefs.GetInt("PlayerRep", 0);
         playerGold = PlayerPrefs.GetInt("PlayerGold", 0);
@@ -197,13 +217,14 @@ public class GameManager : MonoBehaviour
         lastMatchStatus = (LastMatchResult)PlayerPrefs.GetInt("LastMatchStatus", 0);
         lastMatchHealthDifference = PlayerPrefs.GetInt("LastHealthDiff", 0);
         unlockedChapter = PlayerPrefs.GetInt("UnlockedChapter", 1);
-        playingChapterNumber = 0; // Runtime değişken, PlayerPrefs'ten okunmaz
+        playingChapterNumber = 0; // Reset runtime variables since they don't need to be saved
     }
 
     public void ResetAllStats()
     {
         if (IsProxy) { instance.ResetAllStats(); return; }
 
+        // Reset all progression variables to default values as a death penalty
         playerXP = 0;
         playerReputation = 0;
         playerGold = 0;
@@ -213,18 +234,14 @@ public class GameManager : MonoBehaviour
         bonusDamage = 0;
         playerLevel = 1;
         xpForCurrentLevel = 0;
-        unlockedChapter = 1; // Chapter 1 her zaman açık kalır, diğerleri kilitlenir
+        unlockedChapter = 1; // Chapter 1 remains open, others are locked again
         
-        // Son maç durumu ve sağlık farkı gibi meta verileri sıfırlamayabilirsiniz ama isterseniz:
-        // lastMatchStatus = LastMatchResult.None;
-        // lastMatchHealthDifference = 0;
-
-        SaveProgress();
-        Debug.Log("Tüm oyun ilerlemesi (XP, Reputation, Altın, Bıçak, Geliştirmeler, Bölüm Kilitleri) SIFIRLANDI!");
+        SaveProgress(); // Save the cleared data immediately
+        Debug.Log("All game progress has been successfully reset!");
     }
-
     IEnumerator ShowVictoryScreen()
     {
+        // Wait a bit before showing the victory panel and pausing the game
         yield return new WaitForSecondsRealtime(1.5f);
         if (victoryPanel != null)
         {
@@ -233,7 +250,8 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("VictoryPanel bulunamadı! 3 sn sonra lobiye dönülüyor...");
+            // If panel is missing, wait 3 seconds and safely go back to lobby
+            Debug.LogWarning("VictoryPanel not found! Returning to lobby in 3 seconds...");
             yield return new WaitForSecondsRealtime(3f);
             ReturnToLobby();
         }
@@ -241,6 +259,7 @@ public class GameManager : MonoBehaviour
 
     IEnumerator ShowDefeatScreen()
     {
+        // Wait a bit before showing the defeat panel and pausing the game
         yield return new WaitForSecondsRealtime(1.5f);
         if (defeatPanel != null)
         {
@@ -249,7 +268,8 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("DefeatPanel bulunamadı! 3 sn sonra lobiye dönülüyor...");
+            // If panel is missing, wait 3 seconds and safely go back to lobby
+            Debug.LogWarning("DefeatPanel not found! Returning to lobby in 3 seconds...");
             yield return new WaitForSecondsRealtime(3f);
             ReturnToLobby();
         }
@@ -257,10 +277,11 @@ public class GameManager : MonoBehaviour
 
     public void ReturnToLobby()
     {   
-        Debug.Log("Butona tıklandı!");
+        Debug.Log("Button clicked!");
         if (IsProxy) { instance.ReturnToLobby(); return; }
 
-        Debug.Log("Lobiye dönme tuşuna basıldı!");
+        Debug.Log("Returning to lobby button pressed!");
+        // Reset time scale to normal and load the lobby scene
         Time.timeScale = 1f;
         SceneManager.LoadScene("Araf_Lobby");
     }
@@ -269,11 +290,11 @@ public class GameManager : MonoBehaviour
     {
         if (IsProxy) { instance.ReturnToMainMenu(); return; }
 
+        // Reset time scale to normal and load the main menu scene
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
     }
 
-    // ─── XP & Level-Up Yardımcı Metot ───
     public void AddXP(int amount)
     {
         if (IsProxy) { instance.AddXP(amount); return; }
@@ -281,7 +302,7 @@ public class GameManager : MonoBehaviour
         playerXP += amount;
         xpForCurrentLevel += amount;
 
-        // Taşan XP'yi sonraki level'lere aktar
+        // Carry over remaining XP to next levels if it overflows
         while (xpForCurrentLevel >= XpToNextLevel)
         {
             xpForCurrentLevel -= XpToNextLevel;
@@ -293,6 +314,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsProxy) { return instance.BuyKnives(amount, cost); }
 
+        // Check if the player has enough gold to buy knives
         if (playerGold >= cost)
         {
             playerGold -= cost;
@@ -307,12 +329,12 @@ public class GameManager : MonoBehaviour
     {
         if (IsProxy) { instance.UnlockFirstKnife(); return; }
 
-        // Daha önceden açılmadıysa 1. seviyeyi aç
+        // Unlock the first knife level if it is currently locked
         if (unlockedKnifeLevel == 0)
         {
             unlockedKnifeLevel = 1;
             SaveProgress();
-            Debug.Log("İlk bıçağın kilidi açıldı!");
+            Debug.Log("First knife unlocked!");
         }
     }
 }
