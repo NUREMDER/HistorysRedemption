@@ -302,10 +302,10 @@ public class ParkourController : MonoBehaviour
         string tag = other.tag;
 
         // Verify and cache entry states for different zone trigger regions (handles case sensitivity safely)
-        if (tag == "SlideZone" || tag == "slideZone") inSlideZone = true;
-        else if (tag == "ThrowZone" || tag == "throwZone") inThrowZone = true;
-        else if (tag == "JumpOverZone" || tag == "jumpOverZone") inJumpOverZone = true;
-        else if (tag == "Jumping1Zone" || tag == "jumpingZone" || tag == "jumping1Zone") inJumping1Zone = true;
+        if (tag == "SlideZone") inSlideZone = true;
+        else if (tag == "ThrowZone") inThrowZone = true;
+        else if (tag == "JumpOverZone") inJumpOverZone = true;
+        else if (tag == "Jumping1Zone") inJumping1Zone = true;
 
         // Instant death if the player hits a critical obstacle without performing a parkour move
         if (tag == "Obstacle" && !isDoingParkour)
@@ -334,10 +334,10 @@ public class ParkourController : MonoBehaviour
         string tag = other.tag;
 
         // Reset region flags instantly when exiting the specific trigger zones
-        if (tag == "SlideZone" || tag == "slideZone") inSlideZone = false;
-        else if (tag == "ThrowZone" || tag == "throwZone") inThrowZone = false;
-        else if (tag == "JumpOverZone" || tag == "jumpOverZone") inJumpOverZone = false;
-        else if (tag == "Jumping1Zone" || tag == "jumpingZone" || tag == "jumping1Zone") inJumping1Zone = false;
+        if (tag == "SlideZone") inSlideZone = false;
+        else if (tag == "ThrowZone") inThrowZone = false;
+        else if (tag == "JumpOverZone") inJumpOverZone = false;
+        else if (tag == "Jumping1Zone") inJumping1Zone = false;
     }
 
     private void Die()
