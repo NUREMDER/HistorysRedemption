@@ -81,7 +81,15 @@ public class PlayerController : MonoBehaviour
         // Parkurdan kalan bir can var mı kontrol et
         if (PlayerPrefs.HasKey("ParkourRemainingHealth"))
         {
-            currentHealth = PlayerPrefs.GetInt("ParkourRemainingHealth");
+            int parkourHealth = PlayerPrefs.GetInt("ParkourRemainingHealth");
+            int parkourMaxHealth = PlayerPrefs.HasKey("ParkourMaxHealth") ? PlayerPrefs.GetInt("ParkourMaxHealth") : 100;
+            
+            // Scale parkour health proportionally to the player's actual maxHealth
+            // e.g., if parkour was 80/100 and player maxHealth is 120, player gets 96/120
+            float healthRatio = (float)parkourHealth / parkourMaxHealth;
+            currentHealth = Mathf.RoundToInt(healthRatio * maxHealth);
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            
             // Dövüş sonrası tekrar yüklenirse karışmaması için bilgiyi sil
             PlayerPrefs.DeleteKey("ParkourRemainingHealth");
             PlayerPrefs.DeleteKey("ParkourMaxHealth"); 

@@ -80,6 +80,14 @@ public class TeslaAI : MonoBehaviour
         if (modelAnimator == null)
             modelAnimator = GetComponentInChildren<Animator>();
 
+        // Auto-attach the AnimationEvent receiver to the Animator's child GameObject
+        // so that events embedded in FBX clips (e.g., 'Martelo 2') have a valid receiver.
+        // Without this, Unity throws "no receiver" errors that corrupt the Animator state machine.
+        if (modelAnimator != null && modelAnimator.GetComponent<TeslaAnimEventReceiver>() == null)
+        {
+            modelAnimator.gameObject.AddComponent<TeslaAnimEventReceiver>();
+        }
+
         currentHealth = maxHealth;
 
         // Reset health bar UI to full on start
@@ -364,6 +372,18 @@ public class TeslaAI : MonoBehaviour
             Instantiate(lightningPrefab, spawnPos, spawnRot);
         }
     }
+    /// <summary>
+    /// Called by Animation Events embedded in attack animation clips (e.g., 'Martelo 2').
+    /// TeslaAI handles hit detection via code-driven coroutines (PerformHit),
+    /// so this method exists solely to prevent "no receiver" errors from breaking
+    /// the Animator state machine transitions.
+    /// </summary>
+    public void TriggerAttackHit(int pointIndex)
+    {
+        // Hit detection is already handled by PerformHit coroutine.
+        // This empty receiver prevents AnimationEvent errors that disrupt the Animator.
+    }
+
     public void TakeDamage(int damage)
     {
         // Exit early if the enemy is already dead

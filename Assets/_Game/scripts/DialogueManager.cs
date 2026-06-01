@@ -95,6 +95,14 @@ public class DialogueManager : MonoBehaviour
         activeTeslaBoss = teslaBoss;
         activeParkourController = null;
 
+        // Disable EnemyAI boss during dialogue to prevent movement
+        if (activeBoss != null)
+        {
+            activeBoss.enabled = false;
+            Rigidbody2D bossRb = activeBoss.GetComponent<Rigidbody2D>();
+            if (bossRb != null) bossRb.velocity = Vector2.zero;
+        }
+
         if (activeTeslaBoss != null)
         {
             activeTeslaBoss.enabled = false;

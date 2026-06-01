@@ -47,7 +47,7 @@ public class EnemyAI : MonoBehaviour
     private bool isAttacking = false;
     private bool isBlocking = false;
     private bool isFacingRight = true;
-    private bool isDead = false;
+    public bool isDead = false;
     private bool isHurt = false;
     private Coroutine hurtCoroutine;
 
@@ -74,6 +74,16 @@ public class EnemyAI : MonoBehaviour
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             // Gets the Transform component of the found player and assigns it to the player variable
             if (p != null) player = p.transform;
+        }
+
+        // Face the player at start (important for enemies spawned facing the wrong direction)
+        if (player != null)
+        {
+            bool shouldFaceRight = player.position.x > transform.position.x;
+            if (shouldFaceRight != isFacingRight)
+            {
+                Flip();
+            }
         }
     }
 
