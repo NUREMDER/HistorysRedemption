@@ -38,6 +38,16 @@ public class DialogueManager : MonoBehaviour
     {
         if (instance == null) instance = this;
     }
+    void Update()
+    {
+        if (dialoguePanel != null && dialoguePanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            {
+                OnNextClicked();
+            }
+        }
+    }
 
     public void OnNextClicked()
     {
