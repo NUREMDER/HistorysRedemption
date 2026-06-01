@@ -2,28 +2,25 @@
 
 public class CameraTrigger : MonoBehaviour
 {
-    // Yonetmenimizi (CameraManager) buraya baglayacagiz
     public CameraManager cameraManager;
 
-    // Boss alanina girince ne olsun?
     public bool isBossZone = true;
 
-    [Header("Dovus Alanı Bariyerleri")]
+    [Header("Arena Barriers")]
     public GameObject barrierLeft;
     public GameObject barrierRight;
 
-    // Unity'nin "Biri alanima girdi" fonksiyonu
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Giren obje "Player" etiketine sahip mi?
+        // Trigger battle or world camera when player enters the zone
         if (other.CompareTag("Player"))
         {
             if (isBossZone)
             {
-                Debug.Log("Boss Alanina Girildi! Kamera Degisiyor...");
+                Debug.Log("CameraTrigger: Boss Zone entered! Switching camera...");
                 cameraManager.EnterBossMode();
 
-                // Bariyerleri aktif et (Dovus alanindan kacamamasi icin)
+                // Activate barriers to lock the player in the arena
                 if (barrierLeft != null) barrierLeft.SetActive(true);
                 if (barrierRight != null) barrierRight.SetActive(true);
             }
@@ -34,14 +31,12 @@ public class CameraTrigger : MonoBehaviour
         }
     }
 
-    // (Istege Bagli) Alandan cikinca eski haline donsun istersen:
+    
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("Player") && isBossZone)
         {
-            // Burayi simdilik bos birakiyorum, genelde boss dovusu bitene kadar cikilmaz.
-            // Ama acik dunya gezintisi icin kullanacaksan:
-            // cameraManager.ExitBossMode();
+            // Optional: Handle camera reset when player exits, if needed later
         }
     }
 }

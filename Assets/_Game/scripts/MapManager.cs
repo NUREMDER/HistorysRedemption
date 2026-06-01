@@ -2,24 +2,29 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+// NOTE: Written for the old map system, currently unused but kept for future reference
 public class MapManager : MonoBehaviour
 {
     public static MapManager instance;
 
-    [Header("UI Panelleri")]
+    [Header("UI Panels")]
     public GameObject lockPanel;
     public GameObject unlockPanel;
     public GameObject notEnoughXPPanel;
 
-    [Header("Panel Metinleri")]
+    [Header("Panel Texts")]
     public TextMeshProUGUI unlockInfoText;
 
     private string selectedSceneName;
     private int selectedPrice;
     private string requiredPreviousScene;
 
-    void Awake() { instance = this; }
+    void Awake() 
+    { 
+        instance = this; 
+    }
 
+    // Handles the selection logic when a chapter node is clicked
     private void HandleChapterClick(string dispName, string sceneName, int price, string requiredScene)
     {
         selectedSceneName = sceneName;
@@ -28,14 +33,14 @@ public class MapManager : MonoBehaviour
 
         CloseAllPanels();
 
-        // Bölüm zaten açıksa direkt gir
+        // If the chapter is already unlocked, load it directly
         if (PlayerPrefs.GetInt(selectedSceneName + "_Unlocked", 0) == 1)
         {
             LoadLevel(selectedSceneName);
             return;
         }
 
-        // Önceki bölüm kazanıldı mı?
+        // Check if the required previous chapter was completed successfully
         bool isPreviousWon = string.IsNullOrEmpty(requiredPreviousScene) || 
                              (GameManager.instance != null && GameManager.instance.lastWonSceneName == requiredPreviousScene);
 
@@ -47,10 +52,11 @@ public class MapManager : MonoBehaviour
         {
             unlockPanel.SetActive(true);
             if (unlockInfoText != null)
-                unlockInfoText.text = dispName + " kilidini açmak için " + selectedPrice + " XP ödemek ister misin?";
+                unlockInfoText.text = "Do you want to pay " + selectedPrice + " XP to unlock " + dispName + "?";
         }
     }
 
+    // Spends XP to unlock the chosen level if the player can afford it
     public void ConfirmPurchase()
     {
         if (GameManager.instance != null && GameManager.instance.playerXP >= selectedPrice)
@@ -69,7 +75,7 @@ public class MapManager : MonoBehaviour
 
     public void OnCloseButtonClicked()
     {
-    CloseAllPanels();
+        CloseAllPanels();
     }
 
     public void LoadLevel(string sceneName)

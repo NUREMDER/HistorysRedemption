@@ -4,13 +4,13 @@ public class CinematicTrigger : MonoBehaviour
 {
     public DialogueLine[] conversation;
 
-    [Header("Diyalog Bitince Uyanacak Boss (Istege Bagli)")]
+    [Header("Boss Activation")]
     public EnemyAI bossToWakeUp;
     public TeslaAI teslaBossToWakeUp;
 
     private bool hasTriggered = false;
 
-    // PlayerController (Boss/Combat 2D Karakter) Icin
+    // For Player Controller
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player") && !hasTriggered)
@@ -27,34 +27,34 @@ public class CinematicTrigger : MonoBehaviour
         }
     }
 
-    // Shadow1 (ParkourController 3D Karakter) Icin
+    // For 3D Parkour Player Controller
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Cinematic Trigger icine bir sey girdi: " + other.gameObject.name + " | Tag: " + other.tag);
+        Debug.Log("CinematicTrigger: Object entered trigger: " + other.gameObject.name + " | Tag: " + other.tag);
         
         if (other.CompareTag("Player") && !hasTriggered)
         {
-            Debug.Log("- Giren sey Player tagina sahip!");
+            Debug.Log("CinematicTrigger: Object has Player tag.");
             
             ParkourController parkour = other.GetComponent<ParkourController>();
             if (parkour != null)
             {
-                Debug.Log("- O objede ParkourController var, islem devam ediyor.");
+                Debug.Log("CinematicTrigger: ParkourController found. Starting sequence.");
                 hasTriggered = true;
                 
                 if (DialogueManager.instance != null)
                 {
-                    Debug.Log("- DialogueManager bulundu, diyalog aciliyor...");
+                    Debug.Log("CinematicTrigger: DialogueManager found. Opening dialogue...");
                     DialogueManager.instance.StartDialogue(conversation, parkour);
                 }
                 else
                 {
-                    Debug.LogError("!! SAHNEDE DIALOGUE MANAGER YOK VEYA AKTIF DEGIL !!");
+                    Debug.LogError("CinematicTrigger: DialogueManager instance is missing or inactive in the scene!");
                 }
             }
             else
             {
-                Debug.LogError("!! Player tagina sahip ama uzerinde ParkourController scripti yok !!");
+                Debug.LogError("CinematicTrigger: Object has Player tag but is missing a ParkourController component!");
             }
         }
     }

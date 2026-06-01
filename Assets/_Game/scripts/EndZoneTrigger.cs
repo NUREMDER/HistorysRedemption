@@ -4,24 +4,20 @@ using Cinemachine;
 
 public class EndZoneTrigger : MonoBehaviour
 {
-    [Header("Karakter Geçiş Ayarları")]
-    [Tooltip("Parkurda kullandığın karakter (Örn: Shadow1)")]
+    [Header("Character Settings")]
     public GameObject parkourCharacter; 
     
-    [Tooltip("Savaşta kullanacağın ana karakter (Örn: Player)")]
     public GameObject combatCharacter; 
 
-    [Tooltip("Savaşılacak düşman (Örn: Tesla) - Savaş başlayana kadar kapalı tutabilirsin")]
     public GameObject enemyCharacter;
 
-    [Tooltip("Parkur bittiğinde arkadan kapatılacak bariyer (İsteğe bağlı)")]
     public GameObject barrierForParkour;
 
     private bool isTriggered = false;
 
     private void OnTriggerEnter(Collider other)
     {
-        // Eğer giren obje Parkur Karakteriyse ve daha önce tetiklenmediyse
+        // If the entering object has a Player tag and hasn't been triggered yet
         if (other.CompareTag("Player") && !isTriggered)
         {
             isTriggered = true;
@@ -33,30 +29,30 @@ public class EndZoneTrigger : MonoBehaviour
     {
         SceneChanger changer = FindObjectOfType<SceneChanger>();
 
-        // 1. Loading ekranını aç
+        //  Opens loading panel
         if (changer != null && changer.loadingCanvas != null)
         {
             changer.loadingCanvas.SetActive(true);
         }
 
-        // 2. Loading ekranında 3 saniye bekle
+        // Waits 3 seconds in Loading panel
         yield return new WaitForSeconds(3f);
 
-        // 3. Karakter Değişim İşlemleri
+        // 
         if (parkourCharacter != null && combatCharacter != null)
         {
-        // Savaş karakterini, tam olarak parkur karakterinin bittiği noktaya ışınla
+        //Teleport the combat character to the exact position where the parkour character finished
             combatCharacter.transform.position = parkourCharacter.transform.position;
 
-            // Parkur karakterini sahneden sil/gizle, savaş karakterini aktif et
+            // Delete parkourCharacter and acivate combatCharacter
             parkourCharacter.SetActive(false);
             combatCharacter.SetActive(true);
 
-            // Kamerayı yeni savaş karakterine odakla
+            // Focuses camera to combatCharacter
             CameraManager camManager = FindObjectOfType<CameraManager>();
             if (camManager != null && camManager.openWorldCam != null)
             {
-                // Eğer Player'ın içinde "CameraTarget" adında özel bir boş obje varsa ona odaklan
+                // If there is a empty object named CameraTarget focus on it
                 Transform focusTarget = combatCharacter.transform;
                 Transform customTarget = combatCharacter.transform.Find("CameraTarget");
                 
@@ -70,19 +66,19 @@ public class EndZoneTrigger : MonoBehaviour
             }
         }
 
-        // Varsa düşmanı da artık aktif et
+        // Activate Enemy
         if (enemyCharacter != null)
         {
             enemyCharacter.SetActive(true);
         }
 
-        // Parkur bittiğinde arkadan kapatılacak bariyer
+        // Activate barrier after parkour
         if (barrierForParkour != null)
         {
             barrierForParkour.SetActive(true);
         }
 
-        // 4. Loading ekranını kapat ve dövüş başlasın!
+        // Closes loading panel and battle part starts
         if (changer != null && changer.loadingCanvas != null)
         {
             changer.loadingCanvas.SetActive(false);

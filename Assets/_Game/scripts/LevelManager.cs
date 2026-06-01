@@ -2,26 +2,27 @@ using UnityEngine;
 
 public class LevelManager : MonoBehaviour
 {
-    public GameObject invisibleWall; // ParkourBlocker'ı buraya sürükle
-    public float delay = 1.0f;       // 1 saniye sonra kilitlensin
+    public GameObject invisibleWall; // Drag and drop the ParkourBlocker here
+    public float delay = 1.0f;       // Time delay before locking the wall
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            // Sen geçtikten 'delay' saniye sonra 'ActivateWall' fonksiyonunu çalıştır
+            // Activate the wall after the specified delay once the player passes
             Invoke("ActivateWall", delay);
 
-            // Parkur modunu hemen kapat (Dövüş başlasın)
+            // Immediately turn off parkour mode to start the combat
             var parkur = other.GetComponent<ParkourController2d>();
             if (parkur != null)
             {
                 parkur.isParkourActive = false;
-                // Karakterin durması için hızı sıfırlayalım
+                
+                // Reset player velocity to make them stop moving
                 other.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
             }
 
-            Debug.Log("Çizgi geçildi, 1 saniye içinde kapı kapanacak!");
+            Debug.Log("Line crossed, wall will close in 1 second!");
         }
     }
 
@@ -29,11 +30,12 @@ public class LevelManager : MonoBehaviour
     {
         if (invisibleWall != null)
         {
+            // Lock the path behind the player
             invisibleWall.SetActive(true);
-            Debug.Log("DUVAR ÖRÜLDÜ! Artık geri dönüş yok.");
+            Debug.Log("WALL ACTIVATED! No turning back.");
         }
         
-        // Bu trigger'ı sahneden temizle
+        // Destroy this trigger object since it is no longer needed
         Destroy(gameObject);
     }
 }

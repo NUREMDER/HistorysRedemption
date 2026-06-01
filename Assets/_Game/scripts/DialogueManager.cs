@@ -38,6 +38,16 @@ public class DialogueManager : MonoBehaviour
     {
         if (instance == null) instance = this;
     }
+    void Update()
+    {
+        if (dialoguePanel != null && dialoguePanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            {
+                OnNextClicked();
+            }
+        }
+    }
 
     public void OnNextClicked()
     {
@@ -53,7 +63,7 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    // Shadow1 (ParkourController) icin diyalog baslatma
+    //Starts dialogue beginning of parkour
     public void StartDialogue(DialogueLine[] lines, ParkourController parkourController)
     {
         currentDialogue = lines;
@@ -74,7 +84,7 @@ public class DialogueManager : MonoBehaviour
         StartCoroutine(TypeLine());
     }
 
-    // Player + Boss icin diyalog baslatma (mevcut)
+    // Starts dialogue before fight
     public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null, TeslaAI teslaBoss = null)
     {
         currentDialogue = lines;
@@ -137,12 +147,12 @@ public class DialogueManager : MonoBehaviour
 
     void EndDialogue()
     {
-        Debug.Log("EndDialogue tetiklendi. ActiveBoss: " + (activeBoss != null));
+        Debug.Log("DialogueManager: EndDialogue trigerred. ActiveBoss: " + (activeBoss != null));
         dialoguePanel.SetActive(false);
         nextButton.SetActive(false);
 
-        // --- COUNTDOWN MANTIĞI ---
-        // Sadece sahnede aktif bir boss (EnemyAI veya TeslaAI) varsa geri sayımı ve can barını başlatır.
+        // Countdown before fight
+        // Starts countdown and health bar only if an active boss exists.
         if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
         {
             StartCoroutine(CountdownRoutine());
@@ -154,39 +164,38 @@ public class DialogueManager : MonoBehaviour
                 activePlayer.enabled = true;
             }
 
-            // --- CAN BARINI AKTİF ETME (Garantili ve Şartsız Yöntem) ---
-            // HATA ÇÖZÜMÜ: Sadece ve sadece sahnede gerçek bir boss varsa diyalog bitişi bu barı açsın!
-            // Koşu başında oyuncu kendi kendine konuşurken artık buraya takılmayacak ve bar kapalı kalacak.
+            // Only activate the boss bar if an actual boss exists in the scene.
+            // This prevents the bar from showing up during dialogue segments.
             if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
             {
                 bossHealthBar.SetActive(true); 
-                Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
+                Debug.Log("DialogueManager: Dialogue ended: Boss Health Bar forced active." + bossHealthBar.name);
             }
             else
             {
                 // Eğer dövüş sahnesindeysek ve hala görünmüyorsa Inspector uyarısı versin, parkurda hata vermesin
                 if (activeBoss != null || activeTeslaBoss != null)
                 {
-                    Debug.LogError("DİKKAT: bossHealthBar kutucuğu hala boş!");
+                    Debug.LogError("DialogueManager: bossHealthBar object is empty !");
                 }
             }
 
             if (activeBoss != null)
             {
                 activeBoss.enabled = true;
-                Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
+                Debug.Log("DialogueManager: Boss awakened! Battle started!");
             }
             if (activeTeslaBoss != null)
             {
                 activeTeslaBoss.enabled = true;
-                Debug.Log("TESLA UYANDI! SAVAS BASLADI!");
+                Debug.Log("DialogueManager: TeslaBoss awakened! Battle started!");
             }
 
             // Shadow1 parkura devam etsin
             if (activeParkourController != null)
             {
                 activeParkourController.ResumeParkour();
-                Debug.Log("Diyalog bitti, parkura devam!");
+                Debug.Log("DialogueManager: Dialogue finished, resume parkour.");
             }
         }
     }
@@ -196,7 +205,7 @@ public class DialogueManager : MonoBehaviour
         if (bossHealthBar != null)
         {
             bossHealthBar.SetActive(true);
-            Debug.Log("Diyalog bitti: Boss Can Barı zorla aktif edildi: " + bossHealthBar.name);
+            Debug.Log("DialogueManager: Dialogue finished, Boss Health Bar forced active: " + bossHealthBar.name);
         }
 
         Time.timeScale = 0f;
@@ -210,7 +219,7 @@ public class DialogueManager : MonoBehaviour
             counter--;
         }
 
-        // Geri sayım bitince yazıyı gizle (FIGHT yazısı ve bekletmesi kaldırıldı)
+        // after countdown set text unactive
         countdownText.gameObject.SetActive(false);
 
         Time.timeScale = 1f;
@@ -223,19 +232,19 @@ public class DialogueManager : MonoBehaviour
         if (activeBoss != null)
         {
             activeBoss.enabled = true;
-            Debug.Log("BOSS UYANDI! SAVAS BASLADI!");
+            Debug.Log("DialogueManager: Boss awakened! Battle started!");
         }
 
         if (activeTeslaBoss != null)
         {
             activeTeslaBoss.enabled = true;
-            Debug.Log("TESLA UYANDI! SAVAS BASLADI!");
+            Debug.Log("DialogueManager: TeslaBoss awakened! Battle started!");
         }
 
         if (activeParkourController != null)
         {
             activeParkourController.ResumeParkour();
-            Debug.Log("Diyalog bitti, parkura devam!");
+            Debug.Log("DialogueManager: Dialogue finished, resume parkour.");
         }
     }
 }

@@ -9,7 +9,7 @@ public class CameraManager : MonoBehaviour
     
     void Update()
     {
-        
+        // Hotkeys for testing camera switches
         if (Input.GetKeyDown(KeyCode.B))
         {
             EnterBossMode();
@@ -21,19 +21,21 @@ public class CameraManager : MonoBehaviour
         }
     }
 
+    // Switches priority to the Boss Camera for a smooth transition.
     public void EnterBossMode()
     {
        
         bossCam.Priority = 20;
         openWorldCam.Priority = 10;
-        Debug.Log("Savaþ Modu Kamerasý Aktif!");
+        Debug.Log("CameraManager: Boss Cam active");
     }
 
+    // Restores priority back to the Open World Camera.
     public void ExitBossMode()
     {
       
         bossCam.Priority = 9;
         openWorldCam.Priority = 10;
-        Debug.Log("Açýk Dünya Kamerasý Aktif!");
+        Debug.Log("CameraManager: World Cam active");
     }
 }
