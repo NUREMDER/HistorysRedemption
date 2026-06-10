@@ -13,7 +13,7 @@ public class TeslaAI : MonoBehaviour
     public Transform player;
     public float moveSpeed = 3f;
     public float detectionRange = 10f;
-    public float stopDistance = 1.2f;
+    public float stopDistance = 2.0f;
 
     [Header("Attack Settings")]
     public float attackCooldown = 1.5f;
@@ -33,6 +33,16 @@ public class TeslaAI : MonoBehaviour
     public float hurtDuration = 3f;
     public float knockbackForce = 3f; // Knockback speed when taking damage
     public float knockbackDelay = 1.0f; // Delay before the knockback starts
+
+    [Header("Akıcılık Ayarları")]
+    public float accelerationRate = 8f;
+    public float decelerationRate = 12f;
+    public float attackLungeForce = 2.5f;
+
+    [Header("Mesafe & Saldırı Seçimi")]
+    public float meleeHitOffset = 1.5f;              // Minimum forward reach for melee hit detection
+    public float rangedAttackRange = 6f;              // Range at which Tesla can throw lightning while approaching
+    [Range(0f, 1f)] public float closeRangeLightningChance = 0.15f; // Chance to use lightning when very close to player
 
     [Header("Hitbox Settings")]
     public Transform highAttackPoint;
@@ -67,12 +77,13 @@ public class TeslaAI : MonoBehaviour
     private bool isHurt = false;
     private Coroutine hurtCoroutine;
     private bool isFlashing = false;
+    private float currentSpeed;
     private Quaternion rightFacingRotation;
     private Quaternion leftFacingRotation;
 
     void Start()
     {
-        hurtDuration = 3f;
+        hurtDuration = 2.5f;
         rb = GetComponent<Rigidbody2D>();
         audioSource = GetComponent<AudioSource>();
 
@@ -152,13 +163,19 @@ public class TeslaAI : MonoBehaviour
             if (distanceToPlayer > stopDistance && !isAttacking)
             {
                 MoveTowardsPlayer();
+
+                // While approaching, Tesla can throw lightning from a distance
+                if (distanceToPlayer <= rangedAttackRange && Time.time >= lastAttackTime + attackCooldown)
+                {
+                    StartCoroutine(AttackRoutine());
+                }
             }
             else
             {
                 // Stop moving since the enemy is close enough to the player
                 StopMoving();
 
-                // Trigger attack routine if within range, cooldown has expired, and not already attacking
+                // Trigger melee-focused attack routine at close range
                 if (distanceToPlayer <= stopDistance && Time.time >= lastAttackTime + attackCooldown && !isAttacking)
                 {
                     StartCoroutine(AttackRoutine());
@@ -175,7 +192,7 @@ public class TeslaAI : MonoBehaviour
         if (modelAnimator != null)
         {
             // Use horizontal velocity magnitude to drive the locomotion animation blend tree
-            modelAnimator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
+            modelAnimator.SetFloat("Speed", Mathf.Clamp01(Mathf.Abs(rb.velocity.x) / moveSpeed));
             modelAnimator.SetBool("IsBlocking", isBlocking);
         }
     }
@@ -193,16 +210,19 @@ public class TeslaAI : MonoBehaviour
             direction = -1f;
         }
         
-        // Apply horizontal movement while preserving vertical physics velocity
-        rb.velocity = new Vector2(direction * moveSpeed, rb.velocity.y);
+        // Smooth acceleration towards target speed
+        float targetSpeed = direction * moveSpeed;
+        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelerationRate * Time.deltaTime);
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
         
-        // Note: Walking animation is automatically handled in Update() via Rigidbody velocity
+        // Note: Walking animation is handled in Update() via normalized velocity
     }
 
     void StopMoving()
     {
-        // Stop horizontal movement while preserving vertical gravity physics
-        rb.velocity = new Vector2(0, rb.velocity.y);
+        // Smooth deceleration to a stop
+        currentSpeed = Mathf.MoveTowards(currentSpeed, 0, decelerationRate * Time.deltaTime);
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
     }
 
     void FacePlayer()
@@ -232,15 +252,32 @@ public class TeslaAI : MonoBehaviour
     IEnumerator AttackRoutine()
     {
         isAttacking = true;
-        StopMoving();
+
+        // Attack lunge for melee attacks — small forward impulse towards the player
+        // (lunge direction is determined later based on attack type)
 
         if (audioSource != null && attackSound != null)
         {
             audioSource.PlayOneShot(attackSound);
         } 
 
-        // Randomly choose an attack type: 0 = punch, 1 = kick, 2 = lightning projectile
-        int randomAttack = Random.Range(0, 3); 
+        // Smart attack selection based on distance to player
+        float distToPlayer = player != null ? Vector2.Distance(transform.position, player.position) : 0f;
+        int randomAttack;
+        
+        if (distToPlayer > stopDistance)
+        {
+            // Far range: always use lightning when attacking from distance
+            randomAttack = 2;
+        }
+        else
+        {
+            // Close range: favor melee attacks, rarely use lightning
+            if (Random.value < closeRangeLightningChance)
+                randomAttack = 2; // Lightning (rare at close range, 15% default)
+            else
+                randomAttack = Random.Range(0, 2); // 0 (punch) or 1 (kick)
+        }
 
         if (modelAnimator != null)
         {
@@ -251,6 +288,11 @@ public class TeslaAI : MonoBehaviour
             }
             else
             {
+                // Melee attack lunge
+                float lungeDir = isFacingRight ? 1f : -1f;
+                currentSpeed = lungeDir * attackLungeForce;
+                rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
+
                 // Set the specific melee attack type (0 or 1) and trigger the attack animation
                 modelAnimator.SetInteger("AttackType", randomAttack);
                 modelAnimator.SetTrigger("AttackTrigger");
@@ -324,7 +366,7 @@ public class TeslaAI : MonoBehaviour
         
         // Calculate the relative X offset distance between the enemy core and the target point
         float offsetX = Mathf.Abs(selectedPoint.position.x - transform.position.x);
-        if (offsetX < 0.1f) offsetX = 1.0f; // Safe fallback to guarantee hit projection range
+        if (offsetX < meleeHitOffset) offsetX = meleeHitOffset; // Ensure melee attacks reach far enough forward
 
         // Build the dynamic 2D overlap check circle position in front of the enemy
         Vector2 hitPosition = new Vector2(transform.position.x + (direction * offsetX), selectedPoint.position.y);
@@ -348,6 +390,7 @@ public class TeslaAI : MonoBehaviour
         if (hasHit)
         {
             StartCoroutine(HitStopRoutine(0.05f));
+            if (CameraShake.instance != null) CameraShake.instance.Shake(0.5f, 0.15f);
         }
     }
 
@@ -572,7 +615,7 @@ public class TeslaAI : MonoBehaviour
             // Determine facing math so gizmos display properly both during runtime and inside the static editor layout
             float direction = Application.isPlaying ? (isFacingRight ? 1f : -1f) : 1f;
             float offsetX = Mathf.Abs(midAttackPoint.position.x - transform.position.x);
-            if (offsetX < 0.1f) offsetX = 1.0f;
+            if (offsetX < meleeHitOffset) offsetX = meleeHitOffset;
             
             Vector2 hitPos = new Vector2(transform.position.x + (direction * offsetX), midAttackPoint.position.y);
             Gizmos.DrawWireSphere(hitPos, attackRange);

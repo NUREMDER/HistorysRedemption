@@ -25,6 +25,11 @@ public class EnemyAI : MonoBehaviour
     public float blockDuration = 2.0f;
     public float hurtDuration = 3f;
 
+    [Header("Akıcılık Ayarları")]
+    public float accelerationRate = 10f;
+    public float decelerationRate = 15f;
+    public float attackLungeForce = 2f;
+
     [Header("Hitbox Settings")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
@@ -50,10 +55,11 @@ public class EnemyAI : MonoBehaviour
     public bool isDead = false;
     private bool isHurt = false;
     private Coroutine hurtCoroutine;
+    private float currentSpeed;
 
     void Start()
     {
-        hurtDuration = 3f; // Enforces 3 seconds regardless of Inspector value
+        hurtDuration = 2.5f; // Enforces 2.5 seconds regardless of Inspector value
         //Components references
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
@@ -149,16 +155,20 @@ public class EnemyAI : MonoBehaviour
         {   // Player is to the left, set direction to negative
             direction = -1f;
         }
-        // Apply horizontal movement while preserving vertical physics velocity
-        rb.velocity = new Vector2(direction * moveSpeed, rb.velocity.y);
-        // Trigger the walking animation in the animator
-        anim.SetFloat("Speed", 1);
+        // Smooth acceleration towards target speed
+        float targetSpeed = direction * moveSpeed;
+        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelerationRate * Time.deltaTime);
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
+        // Smooth walking animation based on actual velocity
+        anim.SetFloat("Speed", Mathf.Clamp01(Mathf.Abs(rb.velocity.x) / moveSpeed));
     }
 
     void StopMoving()
     {
-        rb.velocity = new Vector2(0, rb.velocity.y);
-        anim.SetFloat("Speed", 0);
+        // Smooth deceleration to a stop
+        currentSpeed = Mathf.MoveTowards(currentSpeed, 0, decelerationRate * Time.deltaTime);
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
+        anim.SetFloat("Speed", Mathf.Clamp01(Mathf.Abs(rb.velocity.x) / moveSpeed));
     }
 
     void FacePlayer()
@@ -186,9 +196,13 @@ public class EnemyAI : MonoBehaviour
     }
 
     IEnumerator AttackRoutine()
-    {   // Set attacking to true and stop any movement
+    {   // Set attacking to true and apply attack lunge
         isAttacking = true;
-        StopMoving();
+
+        // Attack lunge — small forward impulse towards the player
+        float lungeDir = isFacingRight ? 1f : -1f;
+        currentSpeed = lungeDir * attackLungeForce;
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
 
         // Play the attack sound effect if references are assigned
         if (audioSource != null && attackSound != null)
@@ -267,6 +281,7 @@ public class EnemyAI : MonoBehaviour
         if (hasHit)
         {
             StartCoroutine(HitStopRoutine(0.05f));//stop scene for hit effect
+            if (CameraShake.instance != null) CameraShake.instance.Shake(0.2f, 0.08f);
         }
     }
 

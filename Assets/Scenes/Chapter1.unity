@@ -2346,19 +2346,25 @@ MonoBehaviour:
   maxHealth: 100
   healthBarFill: {fileID: 2036007334}
   player: {fileID: 1745143477}
-  moveSpeed: 6
+  moveSpeed: 5
   detectionRange: 10
-  stopDistance: 2
-  attackCooldown: 1
+  stopDistance: 2.5
+  attackCooldown: 2
   attackAnimationDuration: 1
   throwDelay: 1
-  throwAnimationDuration: 2
+  throwAnimationDuration: 4
   blockProtectionDamage: 5
   blockChance: 20
   blockDuration: 1
   hurtDuration: 1
   knockbackForce: 20
   knockbackDelay: 0.2
+  accelerationRate: 7
+  decelerationRate: 25
+  attackLungeForce: 2.5
+  meleeHitOffset: 1.5
+  rangedAttackRange: 6
+  closeRangeLightningChance: 0.15
   highAttackPoint: {fileID: 220969839}
   midAttackPoint: {fileID: 589132862}
   lowAttackPoint: {fileID: 0}
@@ -4413,7 +4419,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6979543846921056982, guid: 44f128de064fc1f48aa47d377d497658, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -40.37535
+      value: -40.37424
       objectReference: {fileID: 0}
     - target: {fileID: 6979543846921056982, guid: 44f128de064fc1f48aa47d377d497658, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5845,6 +5851,50 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8c0911116d137f541acaef10a5f4f7b8, type: 3}
+--- !u!1 &1390441878
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1390441880}
+  - component: {fileID: 1390441879}
+  m_Layer: 0
+  m_Name: CameraShake
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1390441879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1390441878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e1f07bcd5e68d4db15ec13f95c5d98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1390441880
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1390441878}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -56.38668, y: 23.28926, z: -1.1115044}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1417093292 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2229541574273903870, guid: d3139187912750945824eaf7fdfe6877, type: 3}
@@ -6161,7 +6211,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 841243158716282256, guid: 4ed32221a95c0f642989137b8466c343, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -40.37535
+      value: -40.37424
       objectReference: {fileID: 0}
     - target: {fileID: 841243158716282256, guid: 4ed32221a95c0f642989137b8466c343, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8631,3 +8681,4 @@ SceneRoots:
   - {fileID: 1550135274}
   - {fileID: 1457559782}
   - {fileID: 1199606631}
+  - {fileID: 1390441880}

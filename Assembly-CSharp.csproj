@@ -91,6 +91,7 @@
     <Compile Include="Assets\_Game\scripts\TeslaProjectile.cs" />
     <Compile Include="Assets\_Game\scripts\SelfDestruct.cs" />
     <Compile Include="Assets\_Game\scripts\SceneChanger.cs" />
+    <Compile Include="Assets\_Game\scripts\CameraShake.cs" />
     <Compile Include="Assets\_Game\scripts\CameraTrigger.cs" />
   </ItemGroup>
   <ItemGroup>

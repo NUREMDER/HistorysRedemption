@@ -25,6 +25,12 @@ public class PlayerController : MonoBehaviour
     public int blockProtectionDamage = 2;
     public float hurtDuration = 3f;
 
+    [Header("Akıcılık Ayarları")]
+    public float accelerationRate = 30f;
+    public float decelerationRate = 40f;
+    public float attackLungeForce = 3f;
+    public float attackBufferTime = 0.3f;
+
     [Header("Bıçak Fırlatma Ayarları")]
     public GameObject[] knifePrefabs; // 3 tip bıçak prefab'i buraya atanacak
     public Transform throwPoint;
@@ -61,12 +67,15 @@ public class PlayerController : MonoBehaviour
     private Coroutine jumpCoroutine;
     private Coroutine attackCoroutine;
     private float moveInput;
+    private float currentSpeed;
+    private bool attackBuffered = false;
+    private float attackBufferTimer = 0f;
 
     public enum AttackDirection { Neutral, Up, Down, Forward, Backward }
 
     void Start()
     {
-        hurtDuration = 3f; // Enforces 3 seconds regardless of Inspector value
+        hurtDuration = 2.5f; // Enforces 2.5 seconds regardless of Inspector value
         
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
@@ -161,6 +170,7 @@ public class PlayerController : MonoBehaviour
         if (hasHit)
         {
             StartCoroutine(HitStopRoutine(0.05f));
+            if (CameraShake.instance != null) CameraShake.instance.Shake(0.3f, 0.1f);
         }
     }
 
@@ -279,13 +289,27 @@ public class PlayerController : MonoBehaviour
             jumpCoroutine = StartCoroutine(JumpRoutine());
         }
 
-        if (Time.time >= nextAttackTime)
+        // Input buffer countdown
+        if (attackBufferTimer > 0)
         {
-            if (Input.GetMouseButtonDown(0))
+            attackBufferTimer -= Time.deltaTime;
+            if (attackBufferTimer <= 0)
+                attackBuffered = false;
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (!isAttacking && Time.time >= nextAttackTime)
             {
                 if (attackCoroutine != null) StopCoroutine(attackCoroutine);
                 attackCoroutine = StartCoroutine(PerformAttackRoutine());
                 nextAttackTime = Time.time + attackRate;
+            }
+            else if (isAttacking)
+            {
+                // Buffer the attack input for combo chaining
+                attackBuffered = true;
+                attackBufferTimer = attackBufferTime;
             }
         }
 
@@ -306,14 +330,24 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        if (isHurt || isBlocking || isAttacking)
+        if (isHurt || isBlocking)
         {
-            rb.velocity = new Vector2(0, rb.velocity.y);
+            // Quick deceleration when stunned or blocking
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0, decelerationRate * 2f * Time.fixedDeltaTime);
+        }
+        else if (isAttacking)
+        {
+            // Let attack lunge velocity decay naturally
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0, decelerationRate * Time.fixedDeltaTime);
         }
         else
         {
-            rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+            // Smooth acceleration and deceleration
+            float targetSpeed = moveInput * moveSpeed;
+            float rate = (moveInput != 0) ? accelerationRate : decelerationRate;
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, rate * Time.fixedDeltaTime);
         }
+        rb.velocity = new Vector2(currentSpeed, rb.velocity.y);
     }
 
     IEnumerator HurtStunRoutine()
@@ -403,9 +437,12 @@ public class PlayerController : MonoBehaviour
     IEnumerator PerformAttackRoutine()
     {
         isAttacking = true;
-        rb.velocity = Vector2.zero;
 
         if (audioSource != null && attackSound != null) audioSource.PlayOneShot(attackSound);
+
+        // Attack lunge — small forward impulse for dynamic feel
+        float lungeDir = isFacingRight ? 1f : -1f;
+        currentSpeed = lungeDir * attackLungeForce;
 
         AttackDirection dir = AttackDirection.Neutral;
 
@@ -438,6 +475,15 @@ public class PlayerController : MonoBehaviour
         isAttacking = false;
         anim.SetInteger("AttackType", 0);
         attackCoroutine = null;
+
+        // Input buffer: if player pressed attack during this attack, chain into next one
+        if (attackBuffered)
+        {
+            attackBuffered = false;
+            attackBufferTimer = 0f;
+            nextAttackTime = Time.time + attackRate;
+            attackCoroutine = StartCoroutine(PerformAttackRoutine());
+        }
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -466,7 +512,7 @@ public class PlayerController : MonoBehaviour
 
     void UpdateAnimations()
     {
-        anim.SetFloat("Speed", Mathf.Abs(moveInput));
+        anim.SetFloat("Speed", Mathf.Clamp01(Mathf.Abs(rb.velocity.x) / moveSpeed));
         anim.SetFloat("VerticalSpeed", rb.velocity.y);
         anim.SetBool("IsCrouching", isCrouching);
         anim.SetBool("IsBlocking", isBlocking);
