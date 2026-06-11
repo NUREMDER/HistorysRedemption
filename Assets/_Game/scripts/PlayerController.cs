@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour
     public float decelerationRate = 40f;
     public float attackLungeForce = 3f;
     public float attackBufferTime = 0.3f;
+    public float hitEffectScale = 1.5f;
 
     [Header("Bıçak Fırlatma Ayarları")]
     public GameObject[] knifePrefabs; // 3 tip bıçak prefab'i buraya atanacak
@@ -154,6 +155,7 @@ public class PlayerController : MonoBehaviour
         {
             EnemyAI enemyAI = enemy.GetComponent<EnemyAI>();
             TeslaAI teslaAI = enemy.GetComponent<TeslaAI>();
+            NewtonAI newtonAI = enemy.GetComponent<NewtonAI>();
 
             if (enemyAI != null)
             {
@@ -165,11 +167,16 @@ public class PlayerController : MonoBehaviour
                 teslaAI.TakeDamage(totalDamage);
                 hasHit = true;
             }
+            else if (newtonAI != null)
+            {
+                newtonAI.TakeDamage(totalDamage);
+                hasHit = true;
+            }
         }
 
         if (hasHit)
         {
-            StartCoroutine(HitStopRoutine(0.05f));
+            StartCoroutine(HitStopRoutine(0.08f));
             if (CameraShake.instance != null) CameraShake.instance.Shake(0.3f, 0.1f);
         }
     }
@@ -191,6 +198,9 @@ public class PlayerController : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
+
+        // Floating damage number
+        DamagePopup.Create(transform.position, finalDamage);
 
         if (currentHealth > 0 && currentHealth <= (maxHealth * 0.2f))
         {
@@ -222,8 +232,13 @@ public class PlayerController : MonoBehaviour
 
                 if (hitEffectPrefab != null)
                 {
-                    Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                    GameObject fx = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                    fx.transform.localScale *= hitEffectScale;
                 }
+
+                // Hitstop and camera shake when player receives a hit
+                StartCoroutine(HitStopRoutine(0.08f));
+                if (CameraShake.instance != null) CameraShake.instance.Shake(0.4f, 0.12f);
 
                 StartCoroutine(FlashColor());
             }
@@ -547,6 +562,9 @@ public class PlayerController : MonoBehaviour
     {
         Time.timeScale = 0f;
         yield return new WaitForSecondsRealtime(duration);
+        // Slow-motion recovery for dramatic hit feel
+        Time.timeScale = 0.15f;
+        yield return new WaitForSecondsRealtime(0.25f);
         Time.timeScale = 1f;
     }
 }

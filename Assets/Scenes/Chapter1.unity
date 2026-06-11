@@ -2351,7 +2351,7 @@ MonoBehaviour:
   stopDistance: 2.5
   attackCooldown: 2
   attackAnimationDuration: 1
-  throwDelay: 1
+  throwDelay: 0
   throwAnimationDuration: 4
   blockProtectionDamage: 5
   blockChance: 20
@@ -2362,6 +2362,7 @@ MonoBehaviour:
   accelerationRate: 7
   decelerationRate: 25
   attackLungeForce: 2.5
+  hitEffectScale: 1.5
   meleeHitOffset: 1.5
   rangedAttackRange: 6
   closeRangeLightningChance: 0.15

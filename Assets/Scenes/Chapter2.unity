@@ -1060,8 +1060,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7889513539332358479, guid: 85af0a84af6cafb4489fecb1c0076a00, type: 3}
       propertyPath: conversation.Array.data[1].sentence
-      value: I don't care about this realm, Edison. I'm here for my memories. And
-        I know you have the answers.
+      value: 'I don''t care about this realm, Edison. I''m here for my memories.
+        And I know you have the answers.
+
+        (Notices the clusters of light
+        around Edison)'
       objectReference: {fileID: 0}
     - target: {fileID: 7889513539332358479, guid: 85af0a84af6cafb4489fecb1c0076a00, type: 3}
       propertyPath: conversation.Array.data[2].sentence
@@ -1967,19 +1970,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9879ab673f971a448457c95eaa64df7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orbitRadius: 1
-  orbitSpeed: 200
-  particleCount: 6
+  orbitRadius: 2.5
+  orbitSpeed: 250
+  particleCount: 8
   orbitYOffset: -0.8
   damagePerTick: 3
   damageInterval: 6
-  damageRadius: 1.5
+  damageRadius: 2.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 8
   sparkColor: {r: 0.4, g: 0.75, b: 1, a: 0.9}
   glowColor: {r: 0.2, g: 0.5, b: 1, a: 0.4}
-  sparkSize: 0.4
+  sparkSize: 0.5
 --- !u!1001 &437007428
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1998,7 +2001,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 841243158716282256, guid: 4ed32221a95c0f642989137b8466c343, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -131.77867
+      value: -132.67424
       objectReference: {fileID: 0}
     - target: {fileID: 841243158716282256, guid: 4ed32221a95c0f642989137b8466c343, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8843,7 +8846,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6979543846921056982, guid: 44f128de064fc1f48aa47d377d497658, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -131.77867
+      value: -132.67424
       objectReference: {fileID: 0}
     - target: {fileID: 6979543846921056982, guid: 44f128de064fc1f48aa47d377d497658, type: 3}
       propertyPath: m_LocalPosition.y

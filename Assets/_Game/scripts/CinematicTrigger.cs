@@ -7,6 +7,7 @@ public class CinematicTrigger : MonoBehaviour
     [Header("Boss Activation")]
     public EnemyAI bossToWakeUp;
     public TeslaAI teslaBossToWakeUp;
+    public NewtonAI newtonBossToWakeUp;
 
     private bool hasTriggered = false;
 
@@ -21,7 +22,7 @@ public class CinematicTrigger : MonoBehaviour
                 hasTriggered = true;
                 if (DialogueManager.instance != null)
                 {
-                    DialogueManager.instance.StartDialogue(conversation, player, bossToWakeUp, teslaBossToWakeUp);
+                    DialogueManager.instance.StartDialogue(conversation, player, bossToWakeUp, teslaBossToWakeUp, newtonBossToWakeUp);
                 }
             }
         }

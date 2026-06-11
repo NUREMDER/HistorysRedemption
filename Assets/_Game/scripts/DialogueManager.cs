@@ -28,6 +28,7 @@ public class DialogueManager : MonoBehaviour
     private PlayerController activePlayer;
     private EnemyAI activeBoss;
     private TeslaAI activeTeslaBoss;
+    private NewtonAI activeNewtonBoss;
     private ParkourController activeParkourController;
 
     public GameObject bossHealthBar;
@@ -85,7 +86,7 @@ public class DialogueManager : MonoBehaviour
     }
 
     // Starts dialogue before fight
-    public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null, TeslaAI teslaBoss = null)
+    public void StartDialogue(DialogueLine[] lines, PlayerController player, EnemyAI boss = null, TeslaAI teslaBoss = null, NewtonAI newtonBoss = null)
     {
         currentDialogue = lines;
         currentLineIndex = 0;
@@ -93,6 +94,7 @@ public class DialogueManager : MonoBehaviour
         activePlayer = player;
         activeBoss = boss;
         activeTeslaBoss = teslaBoss;
+        activeNewtonBoss = newtonBoss;
         activeParkourController = null;
 
         // Disable EnemyAI boss during dialogue to prevent movement
@@ -107,6 +109,13 @@ public class DialogueManager : MonoBehaviour
         {
             activeTeslaBoss.enabled = false;
             Rigidbody2D rb = activeTeslaBoss.GetComponent<Rigidbody2D>();
+            if (rb != null) rb.velocity = Vector2.zero;
+        }
+
+        if (activeNewtonBoss != null)
+        {
+            activeNewtonBoss.enabled = false;
+            Rigidbody2D rb = activeNewtonBoss.GetComponent<Rigidbody2D>();
             if (rb != null) rb.velocity = Vector2.zero;
         }
 
@@ -161,7 +170,7 @@ public class DialogueManager : MonoBehaviour
 
         // Countdown before fight
         // Starts countdown and health bar only if an active boss exists.
-        if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
+        if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null || activeNewtonBoss != null))
         {
             StartCoroutine(CountdownRoutine());
         }
@@ -174,7 +183,7 @@ public class DialogueManager : MonoBehaviour
 
             // Only activate the boss bar if an actual boss exists in the scene.
             // This prevents the bar from showing up during dialogue segments.
-            if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null))
+            if (bossHealthBar != null && (activeBoss != null || activeTeslaBoss != null || activeNewtonBoss != null))
             {
                 bossHealthBar.SetActive(true); 
                 Debug.Log("DialogueManager: Dialogue ended: Boss Health Bar forced active." + bossHealthBar.name);
@@ -182,7 +191,7 @@ public class DialogueManager : MonoBehaviour
             else
             {
                 // Eğer dövüş sahnesindeysek ve hala görünmüyorsa Inspector uyarısı versin, parkurda hata vermesin
-                if (activeBoss != null || activeTeslaBoss != null)
+                if (activeBoss != null || activeTeslaBoss != null || activeNewtonBoss != null)
                 {
                     Debug.LogError("DialogueManager: bossHealthBar object is empty !");
                 }
@@ -197,6 +206,11 @@ public class DialogueManager : MonoBehaviour
             {
                 activeTeslaBoss.enabled = true;
                 Debug.Log("DialogueManager: TeslaBoss awakened! Battle started!");
+            }
+            if (activeNewtonBoss != null)
+            {
+                activeNewtonBoss.enabled = true;
+                Debug.Log("DialogueManager: NewtonBoss awakened! Battle started!");
             }
 
             // Shadow1 parkura devam etsin
@@ -247,6 +261,12 @@ public class DialogueManager : MonoBehaviour
         {
             activeTeslaBoss.enabled = true;
             Debug.Log("DialogueManager: TeslaBoss awakened! Battle started!");
+        }
+
+        if (activeNewtonBoss != null)
+        {
+            activeNewtonBoss.enabled = true;
+            Debug.Log("DialogueManager: NewtonBoss awakened! Battle started!");
         }
 
         if (activeParkourController != null)

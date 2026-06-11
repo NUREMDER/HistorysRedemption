@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 
-public class TeslaAI : MonoBehaviour
+public class NewtonAI : MonoBehaviour
 {
     [Header("Health Settings")]
     public int maxHealth = 100;
@@ -41,19 +41,19 @@ public class TeslaAI : MonoBehaviour
     public float hitEffectScale = 1.5f;
 
     [Header("Mesafe & Saldırı Seçimi")]
-    public float meleeHitOffset = 1.5f;              // Minimum forward reach for melee hit detection
-    public float rangedAttackRange = 6f;              // Range at which Tesla can throw lightning while approaching
-    [Range(0f, 1f)] public float closeRangeLightningChance = 0.15f; // Chance to use lightning when very close to player
+    public float meleeHitOffset = 2.5f;              // Minimum forward reach for melee hit detection
+    public float rangedAttackRange = 6f;              // Range at which Newton can throw apple while approaching
+    [Range(0f, 1f)] public float closeRangeThrowChance = 0f; // Chance to throw apple when very close to player
 
     [Header("Hitbox Settings")]
     public Transform highAttackPoint;
     public Transform midAttackPoint;
     public Transform lowAttackPoint;
-    public float attackRange = 0.8f;
+    public float attackRange = 1.2f;
     public LayerMask playerLayer;
 
-    [Header("Ranged Attack Settings (Lightning)")]
-    public GameObject lightningPrefab;
+    [Header("Ranged Attack Settings (Apple)")]
+    public int appleDamage = 15;
     public Transform throwPoint;
 
     [Header("VFX & SFX Settingsi")]
@@ -95,9 +95,9 @@ public class TeslaAI : MonoBehaviour
         // Auto-attach the AnimationEvent receiver to the Animator's child GameObject
         // so that events embedded in FBX clips (e.g., 'Martelo 2') have a valid receiver.
         // Without this, Unity throws "no receiver" errors that corrupt the Animator state machine.
-        if (modelAnimator != null && modelAnimator.GetComponent<TeslaAnimEventReceiver>() == null)
+        if (modelAnimator != null && modelAnimator.GetComponent<NewtonAnimEventReceiver>() == null)
         {
-            modelAnimator.gameObject.AddComponent<TeslaAnimEventReceiver>();
+            modelAnimator.gameObject.AddComponent<NewtonAnimEventReceiver>();
         }
 
         currentHealth = maxHealth;
@@ -167,7 +167,7 @@ public class TeslaAI : MonoBehaviour
             {
                 MoveTowardsPlayer();
 
-                // While approaching, Tesla can throw lightning from a distance
+                // While approaching, Newton can throw lightning from a distance
                 if (distanceToPlayer <= rangedAttackRange && Time.time >= lastAttackTime + attackCooldown)
                 {
                     StartCoroutine(AttackRoutine());
@@ -276,8 +276,8 @@ public class TeslaAI : MonoBehaviour
         else
         {
             // Close range: favor melee attacks, rarely use lightning
-            if (Random.value < closeRangeLightningChance)
-                randomAttack = 2; // Lightning (rare at close range, 15% default)
+            if (Random.value < closeRangeThrowChance)
+                randomAttack = 2; // Apple throw (rare at close range, 15% default)
             else
                 randomAttack = Random.Range(0, 2); // 0 (punch) or 1 (kick)
         }
@@ -356,7 +356,7 @@ public class TeslaAI : MonoBehaviour
         Transform selectedPoint = null;
         switch (pointIndex)
         {
-            case 0: selectedPoint = lowAttackPoint; break;
+            case 0: selectedPoint = (lowAttackPoint != null) ? lowAttackPoint : midAttackPoint; break;
             case 1: selectedPoint = midAttackPoint; break;
             case 2: selectedPoint = highAttackPoint; break;
             default: selectedPoint = midAttackPoint; break;
@@ -367,12 +367,10 @@ public class TeslaAI : MonoBehaviour
         // Calculate horizontal direction multiplier (1 for right, -1 for left)
         float direction = isFacingRight ? 1f : -1f;
         
-        // Calculate the relative X offset distance between the enemy core and the target point
-        float offsetX = Mathf.Abs(selectedPoint.position.x - transform.position.x);
-        if (offsetX < meleeHitOffset) offsetX = meleeHitOffset; // Ensure melee attacks reach far enough forward
-
-        // Build the dynamic 2D overlap check circle position in front of the enemy
-        Vector2 hitPosition = new Vector2(transform.position.x + (direction * offsetX), selectedPoint.position.y);
+        // Use fixed meleeHitOffset from parent transform — this prevents the hitbox
+        // from sliding around when the 3D model's bones move during attack animations
+        float hitY = selectedPoint != null ? selectedPoint.position.y : transform.position.y;
+        Vector2 hitPosition = new Vector2(transform.position.x + (direction * meleeHitOffset), hitY);
 
         // Cast a 2D collision sphere to detect all colliders on the player layer
         Collider2D[] hitPlayer = Physics2D.OverlapCircleAll(hitPosition, attackRange, playerLayer);
@@ -399,28 +397,23 @@ public class TeslaAI : MonoBehaviour
 
     IEnumerator PerformThrow()
     {
-        // Wait for the specific wind-up animation delay before spawning the strike
+        // Wait for the throw animation wind-up to reach the arm extension moment
         yield return new WaitForSeconds(throwDelay);
 
-        // Cancel casting if the boss is interrupted or killed during wind-up
+        // Cancel if interrupted during wind-up
         if (isDead || isHurt) yield break;
 
-        if (lightningPrefab != null && player != null)
+        if (player != null)
         {
-            // DESIGN CHOICE: ThrowPoint is disabled. 
-            // We lock onto the player's exact X coordinate and spawn the bolt 10 units straight up in the sky.
-            Vector2 spawnPos = new Vector2(player.position.x, player.position.y + 10f);
-            
-            // Rotate the prefab -90 degrees on the Z axis to force the lightning sprite to drop straight downwards
-            Quaternion spawnRot = Quaternion.Euler(0, 0, -90);
-            
-            // Instantiate the lightning strike object into the active scene
-            Instantiate(lightningPrefab, spawnPos, spawnRot);
+            // Spawn apple from throwPoint (or boss position as fallback)
+            Vector2 spawnPos = throwPoint != null ? (Vector2)throwPoint.position : (Vector2)transform.position;
+            Vector2 targetPos = player.position;
+            AppleProjectile.Create(spawnPos, targetPos, appleDamage);
         }
     }
     /// <summary>
     /// Called by Animation Events embedded in attack animation clips (e.g., 'Martelo 2').
-    /// TeslaAI handles hit detection via code-driven coroutines (PerformHit),
+    /// NewtonAI handles hit detection via code-driven coroutines (PerformHit),
     /// so this method exists solely to prevent "no receiver" errors from breaking
     /// the Animator state machine transitions.
     /// </summary>
@@ -615,18 +608,12 @@ public class TeslaAI : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        // Draw the red melee hit radius indicator anchored to the Mid Attack Point transform
+        // Draw the red melee hit radius — fixed position based on meleeHitOffset
         Gizmos.color = Color.red;
-        if (midAttackPoint != null)
-        {
-            // Determine facing math so gizmos display properly both during runtime and inside the static editor layout
-            float direction = Application.isPlaying ? (isFacingRight ? 1f : -1f) : 1f;
-            float offsetX = Mathf.Abs(midAttackPoint.position.x - transform.position.x);
-            if (offsetX < meleeHitOffset) offsetX = meleeHitOffset;
-            
-            Vector2 hitPos = new Vector2(transform.position.x + (direction * offsetX), midAttackPoint.position.y);
-            Gizmos.DrawWireSphere(hitPos, attackRange);
-        }
+        float direction = Application.isPlaying ? (isFacingRight ? 1f : -1f) : 1f;
+        float hitY = (midAttackPoint != null) ? midAttackPoint.position.y : transform.position.y;
+        Vector2 hitPos = new Vector2(transform.position.x + (direction * meleeHitOffset), hitY);
+        Gizmos.DrawWireSphere(hitPos, attackRange);
     }
 
     IEnumerator HitStopRoutine(float duration)

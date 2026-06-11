@@ -29,6 +29,7 @@ public class EnemyAI : MonoBehaviour
     public float accelerationRate = 10f;
     public float decelerationRate = 15f;
     public float attackLungeForce = 2f;
+    public float hitEffectScale = 1.5f;
 
     [Header("Hitbox Settings")]
     public Transform highAttackPoint;
@@ -280,7 +281,7 @@ public class EnemyAI : MonoBehaviour
         // Trigger hit stop effect if the attack successfully connected
         if (hasHit)
         {
-            StartCoroutine(HitStopRoutine(0.05f));//stop scene for hit effect
+            StartCoroutine(HitStopRoutine(0.08f));//stop scene for hit effect
             if (CameraShake.instance != null) CameraShake.instance.Shake(0.2f, 0.08f);
         }
     }
@@ -323,11 +324,15 @@ public class EnemyAI : MonoBehaviour
 
             if (hitEffectPrefab != null)
             {
-                Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                GameObject fx = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                fx.transform.localScale *= hitEffectScale;
             }
         }
         // Deduct the calculated final damage from current health
         currentHealth -= finalDamage;
+
+        // Floating damage number
+        DamagePopup.Create(transform.position, finalDamage);
 
         // Update the UI health bar fill amount based on current health percentage
         if (healthBarFill != null)
@@ -419,6 +424,9 @@ public class EnemyAI : MonoBehaviour
     {
         Time.timeScale = 0f;
         yield return new WaitForSecondsRealtime(duration);
+        // Slow-motion recovery for dramatic hit feel
+        Time.timeScale = 0.15f;
+        yield return new WaitForSecondsRealtime(0.25f);
         Time.timeScale = 1f;
     }
 }
