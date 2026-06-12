@@ -1445,6 +1445,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1693529268795593445}
     m_Modifications:
+    - target: {fileID: 22049406201919140, guid: 040d7e9aa886a224981e190c23a4b0c5, type: 3}
+      propertyPath: m_text
+      value: " RESULTS\n  -20 Reputation\n "
+      objectReference: {fileID: 0}
     - target: {fileID: 894498020845145828, guid: 040d7e9aa886a224981e190c23a4b0c5, type: 3}
       propertyPath: m_Name
       value: FleePanel
