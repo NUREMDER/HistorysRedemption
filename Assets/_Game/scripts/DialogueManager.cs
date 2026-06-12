@@ -231,18 +231,27 @@ public class DialogueManager : MonoBehaviour
         }
 
         Time.timeScale = 0f;
-        countdownText.gameObject.SetActive(true);
 
-        int counter = 3;
-        while (counter > 0)
+        if (countdownText != null)
         {
-            countdownText.text = counter.ToString();
-            yield return new WaitForSecondsRealtime(1f);
-            counter--;
-        }
+            countdownText.gameObject.SetActive(true);
 
-        // after countdown set text unactive
-        countdownText.gameObject.SetActive(false);
+            int counter = 3;
+            while (counter > 0)
+            {
+                countdownText.text = counter.ToString();
+                yield return new WaitForSecondsRealtime(1f);
+                counter--;
+            }
+
+            // after countdown set text unactive
+            countdownText.gameObject.SetActive(false);
+        }
+        else
+        {
+            // Text atanmamışsa bile oyunu başlatmadan önce 3 saniye beklesin (görünmez sayım)
+            yield return new WaitForSecondsRealtime(3f);
+        }
 
         Time.timeScale = 1f;
 
