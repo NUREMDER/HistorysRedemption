@@ -240,6 +240,22 @@ public class ParkourController : MonoBehaviour
         ClearTriggers();
         anim.SetTrigger("doStumble");
 
+        // Ok (Arrow) engeline çarptıysak oku ve tüm child'larını sahnede tamamen yok et
+        // Collider child objede (Square, Triangle) olabilir, parent'a doğru yukarı çıkarak Arrow'u bul
+        if (obstacleCollider != null)
+        {
+            Transform current = obstacleCollider.transform;
+            while (current != null)
+            {
+                if (current.name.Contains("Arrow"))
+                {
+                    Destroy(current.gameObject);
+                    break;
+                }
+                current = current.parent;
+            }
+        }
+
         // Reduce player health pool upon hitting the obstacle
         TakeDamage(obstacleDamage);
         if (isDead) 
@@ -355,6 +371,9 @@ public class ParkourController : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Max(currentHealth, 0); // Clamp health to zero to prevent negative integer display bugs
         UpdateHealthBar();
+
+        // Floating damage number
+        DamagePopup.Create(transform.position + Vector3.up * 1.5f, damage);
 
         Debug.Log("Shadow1 took damage! Remaining health: " + currentHealth + "/" + maxHealth);
 

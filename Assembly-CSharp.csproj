@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="Assets\_Game\scripts\MapManager.cs" />
     <Compile Include="Assets\_Game\scripts\EnemyController.cs" />
+    <Compile Include="Assets\_Game\scripts\ChapterMusic.cs" />
     <Compile Include="Assets\_Game\scripts\GameManager.cs" />
     <Compile Include="Assets\_Game\scripts\ThrowingKnife.cs" />
     <Compile Include="Assets\_Game\scripts\ElectricAura.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Assets\_Game\scripts\BattleUIConnector.cs" />
     <Compile Include="Assets\_Game\scripts\NewtonAI.cs" />
     <Compile Include="Assets\_Game\scripts\CameraManager.cs" />
+    <Compile Include="Assets\_Game\scripts\GameEndZoneTrigger.cs" />
     <Compile Include="Assets\_Game\scripts\EnemyAI.cs" />
     <Compile Include="Assets\_Game\scripts\ParkourController2d.cs" />
     <Compile Include="Assets\_Game\scripts\LevelManager.cs" />
